@@ -1162,6 +1162,17 @@ export const prescriptionListStyles = createStyles({
 export const healthRecordsStyles = createStyles({
   ...healthRecordsGeneratedStyles,
   greeting: greetingBlock,
+  layout: "flex min-w-0 flex-col gap-4",
+  mainContent: "min-w-0 space-y-4",
+  healthSidebar:
+    "min-w-0 rounded-med border border-[var(--border)] bg-[var(--card)] p-4",
+  trendGrid: "grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3",
+  summaryGrid: "grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3",
+  chartCard: "min-w-0 rounded-med border border-[var(--border)] bg-[var(--card)] p-4",
+  bars: "mt-3 flex h-36 min-w-0 items-end gap-2",
+  barGroup: "flex min-w-0 flex-1 flex-col items-center gap-2",
+  bar: "w-full min-w-[12px] rounded-t-med border border-transparent transition",
+  barLabel: "text-[10px] font-bold text-[var(--muted)]",
 });
 export const ordersStyles = createStyles({
   ...ordersGeneratedStyles,

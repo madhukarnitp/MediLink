@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useApp } from "../../context/AppContext";
+import { useMemo, useState, useEffect } from "react";
 import { Spinner } from "../ui/UI";
 import {
   patients as patientsApi,
@@ -8,64 +7,42 @@ import {
 import { healthRecordsStyles as styles } from "../../styles/tailwindStyles";
 
 const TABS = ["Reports", "Vitals", "Prescriptions"];
-const BP = [
-  { month: "Oct", value: 54, heightClass: styles.barH54 },
-  { month: "Nov", value: 62, heightClass: styles.barH62 },
-  { month: "Dec", value: 70, heightClass: styles.barH70 },
-  { month: "Jan", value: 58, heightClass: styles.barH58 },
-  { month: "Feb", value: 50, heightClass: styles.barH50 },
-  { month: "Mar", value: 46, heightClass: styles.barH46 },
-];
-const CV = [
-  { month: "Oct", value: 20, heightClass: styles.barH20 },
-  { month: "Nov", value: 40, heightClass: styles.barH40 },
-  { month: "Dec", value: 20, heightClass: styles.barH20 },
-  { month: "Jan", value: 60, heightClass: styles.barH60 },
-  { month: "Feb", value: 40, heightClass: styles.barH40 },
-  { month: "Mar", value: 65, heightClass: styles.barH65 },
-];
-const LAB = [
-  {
-    id: 1,
-    date: "2 Feb 2026",
-    test: "Complete Blood Count (CBC)",
-    results: [
-      {
-        parameter: "Hemoglobin",
-        value: "13.5 g/dL",
-        range: "13.5-17.5",
-        status: "low",
-      },
-      {
-        parameter: "WBC Count",
-        value: "7.2 K/μL",
-        range: "4.0-11.0",
-        status: "normal",
-      },
-      {
-        parameter: "Platelets",
-        value: "2.5 L/μL",
-        range: "1.5-4.5",
-        status: "normal",
-      },
-    ],
-  },
-  {
-    id: 2,
-    date: "15 Jan 2026",
-    test: "Lipid Profile",
-    results: [
-      {
-        parameter: "Total Cholesterol",
-        value: "180 mg/dL",
-        range: "<200",
-        status: "normal",
-      },
-      { parameter: "HDL", value: "45 mg/dL", range: ">40", status: "normal" },
-      { parameter: "LDL", value: "110 mg/dL", range: "<100", status: "high" },
-    ],
-  },
-];
+
+const formatDate = (value, options = {}) => {
+  if (!value) return "No date";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "No date";
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    ...options,
+  });
+};
+
+const formatShortDate = (value) => {
+  if (!value) return "No date";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "No date";
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  });
+};
+
+const getDoctorName = (record) =>
+  record?.doctor?.userId?.name || record?.createdBy?.userId?.name || "Doctor";
+
+const numberOrNull = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+const formatVitalValue = (value, suffix = "") => {
+  const number = numberOrNull(value);
+  if (number === null) return "—";
+  return `${Number.isInteger(number) ? number : number.toFixed(1)}${suffix}`;
+};
 
 const getStatusClassName = (status) =>
   ({
@@ -76,32 +53,143 @@ const getStatusClassName = (status) =>
     normal: styles.badgeNormal,
     low: styles.badgeLow,
     high: styles.badgeHigh,
+    critical: styles.badgeHigh,
   })[status] || styles.badgeDefault;
 
+const getVitalDetails = (vital) => {
+  const rows = [];
+  if (vital.bloodPressure?.systolic && vital.bloodPressure?.diastolic) {
+    rows.push([
+      "Blood Pressure",
+      `${vital.bloodPressure.systolic}/${vital.bloodPressure.diastolic} mmHg`,
+    ]);
+  }
+  if (vital.heartRate) rows.push(["Heart Rate", `${vital.heartRate} bpm`]);
+  if (vital.temperature?.value) {
+    rows.push([
+      "Temperature",
+      `${vital.temperature.value} ${vital.temperature.unit === "Fahrenheit" ? "°F" : "°C"}`,
+    ]);
+  }
+  if (vital.weight) rows.push(["Weight", `${vital.weight} kg`]);
+  if (vital.height) rows.push(["Height", `${vital.height} cm`]);
+  if (vital.oxygenSaturation) {
+    rows.push(["Oxygen Saturation", `${vital.oxygenSaturation}%`]);
+  }
+  if (vital.respiratoryRate) {
+    rows.push(["Respiratory Rate", `${vital.respiratoryRate} breaths/min`]);
+  }
+  return rows;
+};
+
+const buildLatestSeries = (items, getter, suffix = "") =>
+  [...items]
+    .filter((item) => numberOrNull(getter(item)) !== null)
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    .slice(-6)
+    .map((item) => ({
+      label: formatShortDate(item.createdAt),
+      value: numberOrNull(getter(item)),
+      display: formatVitalValue(getter(item), suffix),
+    }));
+
+const buildMonthBuckets = (items, dateGetter) => {
+  const now = new Date();
+  const buckets = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+    return {
+      key: `${date.getFullYear()}-${date.getMonth()}`,
+      label: date.toLocaleDateString("en-IN", { month: "short" }),
+      value: 0,
+      display: "0",
+    };
+  });
+
+  items.forEach((item) => {
+    const date = new Date(dateGetter(item));
+    if (Number.isNaN(date.getTime())) return;
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    const bucket = buckets.find((entry) => entry.key === key);
+    if (bucket) {
+      bucket.value += 1;
+      bucket.display = String(bucket.value);
+    }
+  });
+
+  return buckets;
+};
+
 export default function HealthRecords() {
-  const { user } = useApp();
   const [tab, setTab] = useState("Reports");
   const [rxList, setRxList] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [reports, setReports] = useState([]);
+  const [vitals, setVitals] = useState([]);
+  const [consultations, setConsultations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
+      setError("");
       try {
-        const [rxRes, profRes] = await Promise.all([
-          patientsApi.getPrescriptions(),
-          patientsApi.getProfile(),
-        ]);
-        const items = rxRes.data || [];
-        setRxList(items);
-        prescriptionCache.saveList(items);
+        const [rxRes, profRes, reportRes, vitalRes, consultationRes] =
+          await Promise.all([
+            patientsApi.getPrescriptions({ limit: 100 }),
+            patientsApi.getProfile(),
+            patientsApi.getReports({ limit: 100 }),
+            patientsApi.getVitals({ limit: 100 }),
+            patientsApi.getConsultations({ limit: 100 }),
+          ]);
+
+        const prescriptions = rxRes.data || [];
+        setRxList(prescriptions);
+        prescriptionCache.saveList(prescriptions);
         setProfile(profRes.data);
-      } catch {
+        setReports(reportRes.data || []);
+        setVitals(vitalRes.data || []);
+        setConsultations(consultationRes.data || []);
+      } catch (err) {
+        setError(err.message || "Unable to load health records");
       } finally {
         setLoading(false);
       }
     })();
   }, []);
+
+  const summary = useMemo(() => {
+    const latestVital = vitals[0];
+    const latestReport = reports[0];
+    const activePrescriptions = rxList.filter((rx) => rx.status === "active").length;
+    const criticalReports = reports.filter((report) => report.isCritical).length;
+
+    return {
+      reports: reports.length,
+      vitals: vitals.length,
+      activePrescriptions,
+      criticalReports,
+      latestVital: latestVital ? formatDate(latestVital.createdAt) : "None",
+      latestReport: latestReport ? formatDate(latestReport.date || latestReport.createdAt) : "None",
+    };
+  }, [reports, rxList, vitals]);
+
+  const chartData = useMemo(
+    () => ({
+      systolic: buildLatestSeries(
+        vitals,
+        (vital) => vital.bloodPressure?.systolic,
+        " mmHg",
+      ),
+      heartRate: buildLatestSeries(vitals, (vital) => vital.heartRate, " bpm"),
+      reportsByMonth: buildMonthBuckets(reports, (report) => report.date || report.createdAt),
+      consultationsByMonth: buildMonthBuckets(
+        consultations,
+        (consultation) => consultation.createdAt,
+      ),
+    }),
+    [consultations, reports, vitals],
+  );
 
   return (
     <div className={styles.page}>
@@ -110,106 +198,79 @@ export default function HealthRecords() {
         <p>Your complete medical history in one place</p>
       </div>
 
-      <div className={styles.tabs}>
-        {TABS.map((t) => (
-          <button
-            key={t}
-            className={`${styles.tab} ${tab === t ? styles.activeTab : ""}`}
-            onClick={() => setTab(t)}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-
       {loading ? (
         <div className={styles.loadingWrap}>
           <Spinner size={32} />
         </div>
-      ) : (
-        <div className={styles.layout}>
-          <div className={styles.mainContent}>
-            {tab === "Reports" && <ReportsTab />}
-            {tab === "Vitals" && <VitalsTab profile={profile} />}
-            {tab === "Prescriptions" && <PrescriptionsTab rxList={rxList} />}
-          </div>
-
-          <div className={styles.healthSidebar}>
-            <div className={styles.sidebarHeader}>
-              <h3>Health Trends</h3>
-            </div>
-
-            <div className={styles.sidebarSection}>
-              <div className={styles.sectionTitle}>
-                <div className={styles.sectionIcon}>❤️</div>
-                <span>Vital Signs</span>
-              </div>
-              <div className={styles.sectionContent}>
-                <BarChart
-                  title="Blood Pressure"
-                  data={BP}
-                  colorClass={styles.barPrimary}
-                  sub="Avg: 118 mmHg"
-                />
-              </div>
-            </div>
-
-            <div className={styles.sidebarSection}>
-              <div className={styles.sectionTitle}>
-                <div className={styles.sectionIcon}>📅</div>
-                <span>Consultations</span>
-              </div>
-              <div className={styles.sectionContent}>
-                <BarChart
-                  title="Monthly Visits"
-                  data={CV}
-                  colorClass={styles.barBlue}
-                  sub="Last 6 months"
-                />
-              </div>
-            </div>
-
-            <div className={styles.sidebarSection}>
-              <div className={styles.sectionTitle}>
-                <div className={styles.sectionIcon}>📊</div>
-                <span>Current Status</span>
-              </div>
-              <div className={styles.sectionContent}>
-                <div className={styles.summaryCard}>
-                  <div className={styles.summaryTitle}>Health Summary</div>
-                  {[
-                    ["Blood Group", profile?.bloodGroup || "—", "normal"],
-                    [
-                      "Weight",
-                      profile?.weight
-                        ? `${Math.round(profile.weight)} kg`
-                        : "—",
-                      "normal",
-                    ],
-                    ["BMI", profile?.bmi || "—", "normal"],
-                    [
-                      "Allergies",
-                      profile?.allergies?.length > 0
-                        ? profile.allergies.join(", ")
-                        : "None",
-                      profile?.allergies?.length > 0 ? "warn" : "normal",
-                    ],
-                  ].map(([k, v, c]) => (
-                    <div key={k} className={styles.summaryRow}>
-                      <span>{k}</span>
-                      <span
-                        className={c === "warn" ? styles.warn : styles.normal}
-                      >
-                        {v}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+      ) : error ? (
+        <div className={styles.empty}>
+          <strong>Unable to load records</strong>
+          <span>{error}</span>
         </div>
+      ) : (
+        <>
+          <SummaryGrid summary={summary} />
+
+          <div className={styles.tabs}>
+            {TABS.map((t) => (
+              <button
+                key={t}
+                className={`${styles.tab} ${tab === t ? styles.activeTab : ""}`}
+                onClick={() => setTab(t)}
+                type="button"
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.layout}>
+            <div className={styles.mainContent}>
+              {tab === "Reports" && <ReportsTab reports={reports} />}
+              {tab === "Vitals" && <VitalsTab profile={profile} vitals={vitals} />}
+              {tab === "Prescriptions" && <PrescriptionsTab rxList={rxList} />}
+            </div>
+
+            <TrendGraphs
+              chartData={chartData}
+              profile={profile}
+              reports={reports}
+              vitals={vitals}
+            />
+          </div>
+        </>
       )}
+    </div>
+  );
+}
+
+function SummaryGrid({ summary }) {
+  return (
+    <div className={styles.summaryGrid}>
+      <div className={styles.summaryCard}>
+        <span>Reports</span>
+        <strong>{summary.reports}</strong>
+      </div>
+      <div className={styles.summaryCard}>
+        <span>Vitals Logged</span>
+        <strong>{summary.vitals}</strong>
+      </div>
+      <div className={styles.summaryCard}>
+        <span>Active Prescriptions</span>
+        <strong>{summary.activePrescriptions}</strong>
+      </div>
+      <div className={styles.summaryCard}>
+        <span>Critical Reports</span>
+        <strong>{summary.criticalReports}</strong>
+      </div>
+      <div className={styles.summaryCard}>
+        <span>Latest Vital</span>
+        <strong>{summary.latestVital}</strong>
+      </div>
+      <div className={styles.summaryCard}>
+        <span>Latest Report</span>
+        <strong>{summary.latestReport}</strong>
+      </div>
     </div>
   );
 }
@@ -227,21 +288,16 @@ function PrescriptionsTab({ rxList }) {
           <div key={rx._id} className={styles.recordCard}>
             <div className={styles.recordHeader}>
               <div>
-                <div className={styles.recordTitle}>{rx.diagnosis}</div>
+                <div className={styles.recordTitle}>{rx.diagnosis || "Prescription"}</div>
                 <div className={styles.recordMeta}>
-                  {new Date(rx.createdAt).toLocaleDateString("en-IN", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}{" "}
-                  • Prescribed by Dr.{" "}
-                  {rx.createdBy?.userId?.name?.replace("Dr. ", "") || "Doctor"}
+                  {formatDate(rx.createdAt)} • Prescribed by Dr.{" "}
+                  {getDoctorName(rx).replace("Dr. ", "")}
                 </div>
               </div>
               <div
                 className={`${styles.badge} ${getStatusClassName(rx.status)}`}
               >
-                {rx.status}
+                {rx.status || "active"}
               </div>
             </div>
 
@@ -249,10 +305,10 @@ function PrescriptionsTab({ rxList }) {
               <div className={styles.sectionLabel}>Medicines</div>
               <div className={styles.stackList}>
                 {(rx.medicines || []).map((m, i) => (
-                  <div key={i} className={styles.itemRow}>
-                    <div className={styles.itemPrimary}>💊 {m.name}</div>
+                  <div key={`${m.name}-${i}`} className={styles.itemRow}>
+                    <div className={styles.itemPrimary}>{m.name}</div>
                     <div className={styles.itemSecondary}>
-                      {m.dosage} • {m.frequency} • {m.duration}
+                      {[m.dosage, m.frequency, m.duration].filter(Boolean).join(" • ")}
                     </div>
                   </div>
                 ))}
@@ -260,15 +316,7 @@ function PrescriptionsTab({ rxList }) {
 
               <div className={styles.inlineMetaRow}>
                 <span className={styles.inlineMetaLabel}>Expires:</span>
-                <span>
-                  {rx.expiresAt
-                    ? new Date(rx.expiresAt).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </span>
+                <span>{rx.expiresAt ? formatDate(rx.expiresAt) : "—"}</span>
               </div>
             </div>
 
@@ -284,45 +332,65 @@ function PrescriptionsTab({ rxList }) {
   );
 }
 
-function ReportsTab() {
+function ReportsTab({ reports }) {
   return (
     <div>
       <h2 className={styles.colTitle}>Lab Reports & Test Results</h2>
       <div className={styles.recordsList}>
-        {LAB.map((report) => (
-          <div key={report.id} className={styles.recordCard}>
-            <div className={styles.recordHeader}>
-              <div className={styles.recordTitle}>{report.test}</div>
-              <div className={styles.recordMeta}>{report.date}</div>
-            </div>
-
-            <div className={styles.resultList}>
-              {report.results.map((r, i) => (
-                <div key={i} className={styles.resultRow}>
-                  <span className={styles.parameter}>{r.parameter}</span>
-                  <span className={styles.resultValue}>{r.value}</span>
-                  <span className={styles.range}>{r.range}</span>
-                  <span
-                    className={`${styles.badge} ${getStatusClassName(r.status)}`}
-                  >
-                    {r.status}
-                  </span>
+        {reports.length === 0 ? (
+          <p className={styles.emptyText}>No reports found.</p>
+        ) : (
+          reports.map((report) => (
+            <div key={report._id} className={styles.recordCard}>
+              <div className={styles.recordHeader}>
+                <div>
+                  <div className={styles.recordTitle}>{report.title}</div>
+                  <div className={styles.recordMeta}>
+                    {formatDate(report.date || report.createdAt)} • {report.type} • Dr.{" "}
+                    {getDoctorName(report).replace("Dr. ", "")}
+                  </div>
                 </div>
-              ))}
+                <div
+                  className={`${styles.badge} ${
+                    report.isCritical
+                      ? getStatusClassName("critical")
+                      : getStatusClassName("normal")
+                  }`}
+                >
+                  {report.isCritical ? "Critical" : "Normal"}
+                </div>
+              </div>
+
+              {(report.description || report.results) && (
+                <div className={styles.resultList}>
+                  {report.description && (
+                    <div className={styles.resultRow}>
+                      <span className={styles.parameter}>Description</span>
+                      <span className={styles.resultValue}>{report.description}</span>
+                    </div>
+                  )}
+                  {report.results && (
+                    <div className={styles.resultRow}>
+                      <span className={styles.parameter}>Results</span>
+                      <span className={styles.resultValue}>{report.results}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
 }
 
-function VitalsTab({ profile }) {
+function VitalsTab({ profile, vitals }) {
   return (
     <div>
       <h2 className={styles.colTitle}>Vital Signs History</h2>
       <div className={styles.timeline}>
-        {profile && (
+        {vitals.length === 0 && profile && (
           <div className={styles.timelineItem}>
             <div className={styles.tlLine}>
               <div className={styles.tlDot} />
@@ -332,40 +400,179 @@ function VitalsTab({ profile }) {
               <div className={styles.tlDate}>Current</div>
               <div className={styles.tlTitle}>Health Profile</div>
               <div className={styles.tlDetail}>
-                {profile.weight && <div>• Weight: {profile.weight} kg</div>}
-                {profile.height && <div>• Height: {profile.height} cm</div>}
-                {profile.bmi && <div>• BMI: {profile.bmi}</div>}
-                {profile.bloodGroup && (
-                  <div>• Blood Group: {profile.bloodGroup}</div>
-                )}
+                {profile.weight && <div>Weight: {profile.weight} kg</div>}
+                {profile.height && <div>Height: {profile.height} cm</div>}
+                {profile.bmi && <div>BMI: {profile.bmi}</div>}
+                {profile.bloodGroup && <div>Blood Group: {profile.bloodGroup}</div>}
               </div>
             </div>
           </div>
         )}
 
-        <p
-          className={`${styles.timelineNote} ${profile ? styles.timelineNoteIndented : ""}`}
-        >
-          Detailed vitals history will appear here as you log health data.
-        </p>
+        {vitals.length === 0 ? (
+          <p className={`${styles.timelineNote} ${profile ? styles.timelineNoteIndented : ""}`}>
+            No vitals have been logged yet.
+          </p>
+        ) : (
+          vitals.map((vital) => {
+            const details = getVitalDetails(vital);
+            return (
+              <div className={styles.timelineItem} key={vital._id}>
+                <div className={styles.tlLine}>
+                  <div className={styles.tlDot} />
+                  <div className={styles.tlStem} />
+                </div>
+                <div className={styles.tlContent}>
+                  <div className={styles.tlDate}>{formatDate(vital.createdAt)}</div>
+                  <div className={styles.tlTitle}>Recorded by Dr. {getDoctorName(vital).replace("Dr. ", "")}</div>
+                  <div className={styles.tlDetail}>
+                    {details.map(([label, value]) => (
+                      <div key={label}>
+                        {label}: {value}
+                      </div>
+                    ))}
+                    {vital.notes && <div>Notes: {vital.notes}</div>}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
 }
 
-function BarChart({ title, data, colorClass, sub }) {
+function TrendGraphs({ chartData, profile, reports, vitals }) {
+  const latestVital = vitals[0];
+  const latestRows = [
+    [
+      "Blood Group",
+      profile?.bloodGroup || "—",
+      "normal",
+    ],
+    [
+      "Weight",
+      latestVital?.weight
+        ? `${Math.round(latestVital.weight)} kg`
+        : profile?.weight
+          ? `${Math.round(profile.weight)} kg`
+          : "—",
+      "normal",
+    ],
+    [
+      "Blood Pressure",
+      latestVital?.bloodPressure?.systolic && latestVital?.bloodPressure?.diastolic
+        ? `${latestVital.bloodPressure.systolic}/${latestVital.bloodPressure.diastolic}`
+        : "—",
+      "normal",
+    ],
+    [
+      "Allergies",
+      profile?.allergies?.length > 0 ? profile.allergies.join(", ") : "None",
+      profile?.allergies?.length > 0 ? "warn" : "normal",
+    ],
+  ];
+
+  return (
+    <div className={styles.healthSidebar}>
+      <div className={styles.sidebarHeader}>
+        <h3>Health Trends</h3>
+      </div>
+
+      <div className={styles.trendGrid}>
+        <BarChart
+          title="Blood Pressure"
+          data={chartData.systolic}
+          colorClass={styles.barPrimary}
+          emptyText="No blood pressure records yet."
+        />
+        <BarChart
+          title="Heart Rate"
+          data={chartData.heartRate}
+          colorClass={styles.barBlue}
+          emptyText="No heart rate records yet."
+        />
+        <BarChart
+          title="Reports Added"
+          data={chartData.reportsByMonth}
+          colorClass={styles.barPrimary}
+          emptyText="No report activity yet."
+        />
+        <BarChart
+          title="Consultations"
+          data={chartData.consultationsByMonth}
+          colorClass={styles.barBlue}
+          emptyText="No consultation activity yet."
+        />
+
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryTitle}>Current Status</div>
+          {latestRows.map(([k, v, c]) => (
+            <div key={k} className={styles.summaryRow}>
+              <span>{k}</span>
+              <span className={c === "warn" ? styles.warn : styles.normal}>
+                {v}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryTitle}>Report Mix</div>
+          {reports.length === 0 ? (
+            <div className={styles.emptyText}>No reports added yet.</div>
+          ) : (
+            Object.entries(
+              reports.reduce((counts, report) => {
+                const type = report.type || "Other";
+                counts[type] = (counts[type] || 0) + 1;
+                return counts;
+              }, {}),
+            ).map(([type, count]) => (
+              <div key={type} className={styles.summaryRow}>
+                <span>{type}</span>
+                <span className={styles.normal}>{count}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BarChart({ title, data, colorClass, emptyText }) {
+  const max = Math.max(...data.map((entry) => entry.value), 0);
+  const hasData = data.some((entry) => entry.value > 0);
+
   return (
     <div className={styles.chartCard}>
       <div className={styles.chartTitle}>{title}</div>
-      <div className={styles.bars}>
-        {data.map((d) => (
-          <div key={d.month} className={styles.barGroup}>
-            <div className={`${styles.bar} ${colorClass} ${d.heightClass}`} />
-            <span className={styles.barLabel}>{d.month}</span>
+      {hasData ? (
+        <>
+          <div className={styles.bars}>
+            {data.map((entry) => {
+              const height = max > 0 ? Math.max((entry.value / max) * 100, 8) : 0;
+              return (
+                <div key={`${entry.label}-${entry.value}`} className={styles.barGroup}>
+                  <div
+                    className={`${styles.bar} ${colorClass}`}
+                    style={{ height: `${height}%` }}
+                    title={entry.display}
+                  />
+                  <span className={styles.barLabel}>{entry.label}</span>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
-      {sub && <div className={styles.chartSub}>{sub}</div>}
+          <div className={styles.chartSub}>
+            Latest: {data[data.length - 1]?.display || "—"}
+          </div>
+        </>
+      ) : (
+        <div className={styles.emptyText}>{emptyText}</div>
+      )}
     </div>
   );
 }

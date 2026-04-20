@@ -473,6 +473,14 @@ export const patients = {
     req(`/patients/consultations?${new URLSearchParams(p)}`, {
       cachePolicy: "persist",
     }),
+  getReports: (p = {}) =>
+    req(`/patients/reports?${new URLSearchParams(p)}`, {
+      cacheTtlMs: 15_000,
+    }),
+  getVitals: (p = {}) =>
+    req(`/patients/vitals?${new URLSearchParams(p)}`, {
+      cacheTtlMs: 15_000,
+    }),
 };
 
 export const admin = {

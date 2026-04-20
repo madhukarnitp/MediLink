@@ -2,6 +2,8 @@ const Patient = require('../models/Patient');
 const User = require('../models/User');
 const Prescription = require('../models/Prescription');
 const Consultation = require('../models/Consultation');
+const Report = require('../models/Report');
+const Vital = require('../models/Vital');
 const { success, error, paginate } = require('../utils/apiResponse');
 const { PRESCRIPTION_STATUS, CONSULTATION_STATUS, PAGINATION } = require('../utils/constants');
 const { addPublicVerification } = require('../utils/prescriptionVerification');
@@ -81,6 +83,67 @@ exports.getPrescriptions = async (req, res, next) => {
 
     console.log(`[patient] getPrescriptions: found ${prescriptions.length} prescriptions`);
     return paginate(res, prescriptions.map(addPublicVerification), total, page, limit);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/patients/reports
+ */
+exports.getReports = async (req, res, next) => {
+  try {
+    const page = Math.max(parseInt(req.query.page, 10) || PAGINATION.DEFAULT_PAGE, 1);
+    const requestedLimit = parseInt(req.query.limit, 10) || PAGINATION.DEFAULT_LIMIT;
+    const limit = Math.min(Math.max(requestedLimit, 1), PAGINATION.MAX_LIMIT);
+    const skip = (page - 1) * limit;
+
+    const patient = await Patient.findOne({ userId: req.user._id }).select('_id').lean();
+    if (!patient) return error(res, 'Patient profile not found', 404);
+
+    const filter = { patient: patient._id };
+    if (req.query.type) filter.type = req.query.type;
+
+    const [reports, total] = await Promise.all([
+      Report.find(filter)
+        .populate({ path: 'doctor', populate: { path: 'userId', select: 'name avatar' } })
+        .sort({ date: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Report.countDocuments(filter),
+    ]);
+
+    return paginate(res, reports, total, page, limit);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/patients/vitals
+ */
+exports.getVitals = async (req, res, next) => {
+  try {
+    const page = Math.max(parseInt(req.query.page, 10) || PAGINATION.DEFAULT_PAGE, 1);
+    const requestedLimit = parseInt(req.query.limit, 10) || PAGINATION.DEFAULT_LIMIT;
+    const limit = Math.min(Math.max(requestedLimit, 1), PAGINATION.MAX_LIMIT);
+    const skip = (page - 1) * limit;
+
+    const patient = await Patient.findOne({ userId: req.user._id }).select('_id').lean();
+    if (!patient) return error(res, 'Patient profile not found', 404);
+
+    const [vitals, total] = await Promise.all([
+      Vital.find({ patient: patient._id })
+        .populate({ path: 'doctor', populate: { path: 'userId', select: 'name avatar' } })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Vital.countDocuments({ patient: patient._id }),
+    ]);
+
+    return paginate(res, vitals, total, page, limit);
   } catch (err) {
     next(err);
   }

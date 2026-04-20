@@ -9,6 +9,8 @@ const {
   getPrescriptionById,
   getConsultations,
   getDashboard,
+  getReports,
+  getVitals,
   searchPatients,
 } = require('../controllers/patientController');
 const { protect, authorize } = require('../middleware/auth');
@@ -41,6 +43,8 @@ router.get('/prescriptions/active', protect, authorize(ROLES.PATIENT), getActive
 router.get('/prescriptions/:id', protect, authorize(ROLES.PATIENT), prescriptionIdRules, validate, getPrescriptionById);
 router.get('/prescriptions', protect, authorize(ROLES.PATIENT), getPrescriptions);
 
+router.get('/reports', protect, authorize(ROLES.PATIENT), getReports);
+router.get('/vitals', protect, authorize(ROLES.PATIENT), getVitals);
 router.get('/consultations', protect, authorize(ROLES.PATIENT), getConsultations);
 
 module.exports = router;
