@@ -41,19 +41,26 @@ const sendEmail = async (options) => {
 };
 
 const emailTemplates = {
-  verifyEmail: (name, verifyUrl) => ({
+  verifyEmail: (name, verifyUrl, verificationCode) => ({
     subject: 'Verify your Medilink email',
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:32px;border:1px solid #e0e0e0;border-radius:8px;">
         <h2 style="color:#0d9488;">Welcome to Medilink, ${name}!</h2>
         <p>Please verify your email address to get started.</p>
+        <p style="margin:18px 0 6px;font-size:13px;color:#475569;">Verification code</p>
+        <div style="display:inline-block;margin-bottom:12px;padding:12px 18px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;color:#0f172a;font-size:28px;font-weight:700;letter-spacing:0.28em;">
+          ${verificationCode}
+        </div>
+        <p style="color:#475569;font-size:13px;line-height:1.6;margin-bottom:0;">
+          You can enter this code in the MediLink verification screen, or use the button below.
+        </p>
         <a href="${verifyUrl}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#0d9488;color:white;text-decoration:none;border-radius:6px;">
           Verify Email
         </a>
         <p style="color:#666;font-size:13px;">This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.</p>
       </div>
     `,
-    text: `Welcome to Medilink! Verify your email: ${verifyUrl}`,
+    text: `Welcome to Medilink! Your verification code is ${verificationCode}. Verify your email here: ${verifyUrl}`,
   }),
 
   passwordReset: (name, resetUrl) => ({

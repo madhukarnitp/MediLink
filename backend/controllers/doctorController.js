@@ -6,6 +6,7 @@ const Prescription = require('../models/Prescription');
 const { success, error, paginate } = require('../utils/apiResponse');
 const { CONSULTATION_STATUS, PAGINATION, SOCKET_EVENTS } = require('../utils/constants');
 const { sendSseToAll } = require('../utils/sseHub');
+const { emitToRealtimeBroadcast } = require('../utils/realtimeBridge');
 
 /**
  * GET /api/doctors
@@ -161,6 +162,16 @@ exports.updateOnlineStatus = async (req, res, next) => {
       doctorUserId: req.user._id,
       online: doctor.online,
       lastSeen: doctor.online ? undefined : new Date(),
+    });
+    emitToRealtimeBroadcast(
+      doctor.online ? SOCKET_EVENTS.DOCTOR_ONLINE : SOCKET_EVENTS.DOCTOR_OFFLINE,
+      {
+        doctorUserId: req.user._id,
+        online: doctor.online,
+        lastSeen: doctor.online ? undefined : new Date(),
+      },
+    ).catch((socketErr) => {
+      console.warn(`[doctor] Realtime status emit failed: ${socketErr.message}`);
     });
     return success(res, { online: doctor.online });
   } catch (err) {

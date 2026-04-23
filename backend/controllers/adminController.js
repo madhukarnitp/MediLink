@@ -6,7 +6,8 @@ const Medicine = require('../models/Medicine');
 const { success, error, paginate } = require('../utils/apiResponse');
 const { ROLES, PAGINATION } = require('../utils/constants');
 
-const USER_SELECT = '-password -emailVerifyToken -emailVerifyExpire -resetPasswordToken -resetPasswordExpire';
+const USER_SELECT =
+  '-password -emailVerifyToken -emailVerifyExpire -emailVerifyCode -emailVerifyCodeExpire -resetPasswordToken -resetPasswordExpire';
 
 exports.createUser = async (req, res, next) => {
   let user;

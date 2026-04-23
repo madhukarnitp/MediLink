@@ -8,7 +8,9 @@ const {
   getMe,
   updateMe,
   refreshToken,
-  verifyEmail,
+  requestVerification,
+  verifyEmailCode,
+  verifyEmailToken,
   forgotPassword,
   resetPassword,
   changePassword,
@@ -38,6 +40,18 @@ const loginRules = [
 
 const forgotRules = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+];
+
+const requestVerificationRules = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+];
+
+const verifyEmailRules = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('code')
+    .trim()
+    .isLength({ min: 4, max: 8 })
+    .withMessage('Verification code is required'),
 ];
 
 const resetRules = [
@@ -89,8 +103,9 @@ router.post('/logout', protect, logout);
 router.get('/me', protect, getMe);
 router.put('/me', protect, handleAvatarUpload, updateMeRules, validate, updateMe);
 router.post('/refresh', refreshToken);
-
-router.get('/verify-email/:token', verifyEmail);
+router.post('/request-verification', requestVerificationRules, validate, requestVerification);
+router.post('/verify-email', verifyEmailRules, validate, verifyEmailCode);
+router.get('/verify-email/:token', verifyEmailToken);
 router.post('/forgot-password', forgotRules, validate, forgotPassword);
 router.put('/reset-password/:token', resetRules, validate, resetPassword);
 router.put('/change-password', protect, changePasswordRules, validate, changePassword);

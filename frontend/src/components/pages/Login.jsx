@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
 import { Button } from "../ui/UI";
 import { loginStyles as styles } from "../../styles/tailwindStyles";
@@ -20,6 +21,7 @@ const SPECIALIZATIONS = [
 
 export default function Login() {
   const { login } = useApp();
+  const location = useLocation();
   const [tab, setTab] = useState("login");
   const [role, setRole] = useState("patient");
   const [email, setEmail] = useState("");
@@ -35,6 +37,65 @@ export default function Login() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const handledVerificationTokenRef = useRef("");
+
+  useEffect(() => {
+    const routeFromHash = location.hash.replace(/^#\/?/, "");
+    const routeFromPath = location.pathname.replace(/^\/+/, "");
+    const route = routeFromHash || routeFromPath;
+    const parts = route.split("/").filter(Boolean);
+
+    if (parts[0] !== "verify-email" || !parts[1]) return;
+
+    const verificationToken = decodeURIComponent(parts[1]);
+    if (
+      !verificationToken ||
+      handledVerificationTokenRef.current === verificationToken
+    ) {
+      return;
+    }
+
+    handledVerificationTokenRef.current = verificationToken;
+    setError("");
+    setNotice("Checking your verification link...");
+    setTab("verify");
+
+    const clearVerificationRoute = () => {
+      if (typeof window === "undefined") return;
+      const url = new URL(window.location.href);
+      if (url.hash.startsWith("#/verify-email/")) {
+        url.hash = "";
+      }
+      if (url.pathname.startsWith("/verify-email/")) {
+        url.pathname = "/";
+      }
+      window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+    };
+
+    (async () => {
+      setLoading(true);
+      try {
+        const { auth } = await import("../../services/api");
+        const result = await auth.verifyEmailToken(verificationToken);
+        const verifiedEmail = result?.data?.email || result?.email || "";
+        if (verifiedEmail) {
+          const normalizedEmail = verifiedEmail.trim().toLowerCase();
+          setVerificationEmail(normalizedEmail);
+          setEmail(normalizedEmail);
+        }
+        setVerificationCode("");
+        setTab("login");
+        setNotice("Email verified. You can now login.");
+        clearVerificationRoute();
+      } catch (err) {
+        setError(err.message || "Verification failed");
+        setNotice("This verification link is invalid or expired. Request a new code below.");
+        clearVerificationRoute();
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [location.hash, location.pathname]);
 
   const handleLogin = async (e) => {
     e && e.preventDefault();

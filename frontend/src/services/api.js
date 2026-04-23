@@ -334,7 +334,7 @@ export const auth = {
         /account.*not verified/i.test(message)
       ) {
         err.code = "ACCOUNT_NOT_VERIFIED";
-      } else if (/account is deactivated/i.test(message)) {
+      } else if (/account is deactivated|account has been blocked/i.test(message)) {
         err.code = "ACCOUNT_BLOCKED";
       }
       throw err;
@@ -380,6 +380,11 @@ export const auth = {
     req("/auth/verify-email", {
       method: "POST",
       body: JSON.stringify({ email, code }),
+    }),
+  verifyEmailToken: (token) =>
+    req(`/auth/verify-email/${encodeURIComponent(token)}`, {
+      cacheTtlMs: 0,
+      skipAuth: true,
     }),
   changePassword: (cur, nw) =>
     req("/auth/change-password", {

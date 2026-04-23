@@ -1,5 +1,6 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const { app } = require('../server');
 const User = require('../models/User');
 const Patient = require('../models/Patient');
@@ -187,6 +188,73 @@ describe('POST /api/auth/login', () => {
 
     expect(res.statusCode).toBe(403);
     expect(res.body.message).toMatch(/pending admin verification/i);
+  });
+});
+
+describe('Email verification flows', () => {
+  it('resends a verification code for an unverified user', async () => {
+    await request(app).post('/api/auth/register').send({
+      name: 'Verify User',
+      email: 'verifyuser@test.com',
+      password: 'password123',
+      role: 'patient',
+    });
+
+    const res = await request(app).post('/api/auth/request-verification').send({
+      email: 'verifyuser@test.com',
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.message).toMatch(/verification code sent/i);
+
+    const user = await User.findOne({ email: 'verifyuser@test.com' }).lean();
+    expect(user.emailVerifyToken).toBeTruthy();
+    expect(user.emailVerifyCode).toBeTruthy();
+  });
+
+  it('verifies email with a numeric verification code', async () => {
+    const user = await User.create({
+      name: 'Code Verify',
+      email: 'codeverify@test.com',
+      password: 'password123',
+      role: 'patient',
+      emailVerifyCode: crypto.createHash('sha256').update('123456').digest('hex'),
+      emailVerifyCodeExpire: Date.now() + 10 * 60 * 1000,
+    });
+    await Patient.create({ userId: user._id });
+
+    const res = await request(app).post('/api/auth/verify-email').send({
+      email: 'codeverify@test.com',
+      code: '123456',
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.message).toMatch(/verified successfully/i);
+
+    const updated = await User.findById(user._id).lean();
+    expect(updated.isEmailVerified).toBe(true);
+    expect(updated.emailVerifyCode).toBeFalsy();
+  });
+
+  it('verifies email with a token link', async () => {
+    const user = await User.create({
+      name: 'Token Verify',
+      email: 'tokenverify@test.com',
+      password: 'password123',
+      role: 'patient',
+    });
+    await Patient.create({ userId: user._id });
+    const rawToken = user.generateEmailVerifyToken();
+    await user.save({ validateBeforeSave: false });
+
+    const res = await request(app).get(`/api/auth/verify-email/${rawToken}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.message).toMatch(/verified successfully/i);
+
+    const updated = await User.findById(user._id).lean();
+    expect(updated.isEmailVerified).toBe(true);
+    expect(updated.emailVerifyToken).toBeFalsy();
   });
 });
 

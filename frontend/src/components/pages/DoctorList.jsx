@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApp, PAGES } from "../../context/AppContext";
 import { StatusBadge, Button, Spinner, ErrorMsg } from "../ui/UI";
 import { doctors as doctorsApi } from "../../services/api";
@@ -27,6 +27,7 @@ export default function DoctorList() {
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [maxPrice, setMaxPrice] = useState(2000);
   const [starting, setStarting] = useState(null);
+  const presenceRefreshTimer = useRef(null);
   const searchTerm = (pageParams.search || "").trim().toLowerCase();
   const visibleDoctors = useMemo(
     () =>
@@ -72,6 +73,16 @@ export default function DoctorList() {
     const sameDoctorUser = (doc, doctorUserId) =>
       String(doc.userId?._id || doc.userId) === String(doctorUserId);
 
+    const scheduleRefresh = () => {
+      if (presenceRefreshTimer.current) {
+        window.clearTimeout(presenceRefreshTimer.current);
+      }
+      presenceRefreshTimer.current = window.setTimeout(() => {
+        load({ silent: true });
+        presenceRefreshTimer.current = null;
+      }, 1200);
+    };
+
     const applyPresence = ({ doctorUserId, online, lastSeen } = {}) => {
       if (!doctorUserId) return;
 
@@ -96,9 +107,7 @@ export default function DoctorList() {
         return next;
       });
 
-      if (online || onlineOnly) {
-        window.setTimeout(() => load({ silent: true }), 350);
-      }
+      scheduleRefresh();
     };
 
     const onPresence = (event) => applyPresence(event.detail || {});
@@ -106,6 +115,10 @@ export default function DoctorList() {
     window.addEventListener("medilink:doctor-presence", onPresence);
     return () => {
       window.removeEventListener("medilink:doctor-presence", onPresence);
+      if (presenceRefreshTimer.current) {
+        window.clearTimeout(presenceRefreshTimer.current);
+        presenceRefreshTimer.current = null;
+      }
     };
   }, [load, onlineOnly]);
 

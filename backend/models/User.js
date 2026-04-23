@@ -47,6 +47,8 @@ const userSchema = new mongoose.Schema(
     },
     emailVerifyToken: String,
     emailVerifyExpire: Date,
+    emailVerifyCode: String,
+    emailVerifyCodeExpire: Date,
     resetPasswordToken: String,
     resetPasswordExpire: Date,
     isActive: {
@@ -99,6 +101,13 @@ userSchema.methods.generateEmailVerifyToken = function () {
   return token;
 };
 
+userSchema.methods.generateEmailVerifyCode = function () {
+  const code = `${crypto.randomInt(0, 1000000)}`.padStart(6, '0');
+  this.emailVerifyCode = crypto.createHash('sha256').update(code).digest('hex');
+  this.emailVerifyCodeExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
+  return code;
+};
+
 // Generate password reset token
 userSchema.methods.generatePasswordResetToken = function () {
   const token = crypto.randomBytes(32).toString('hex');
@@ -113,6 +122,8 @@ userSchema.methods.toSafeJSON = function () {
   delete obj.password;
   delete obj.emailVerifyToken;
   delete obj.emailVerifyExpire;
+  delete obj.emailVerifyCode;
+  delete obj.emailVerifyCodeExpire;
   delete obj.resetPasswordToken;
   delete obj.resetPasswordExpire;
   return obj;
@@ -120,6 +131,7 @@ userSchema.methods.toSafeJSON = function () {
 
 userSchema.index({ role: 1, isActive: 1, createdAt: -1 });
 userSchema.index({ emailVerifyToken: 1, emailVerifyExpire: 1 });
+userSchema.index({ emailVerifyCode: 1, emailVerifyCodeExpire: 1 });
 userSchema.index({ resetPasswordToken: 1, resetPasswordExpire: 1 });
 
 module.exports = mongoose.model('User', userSchema);

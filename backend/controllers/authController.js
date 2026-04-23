@@ -8,6 +8,28 @@ const { ROLES, SOCKET_EVENTS } = require('../utils/constants');
 const { emitToRealtimeBroadcast } = require('../utils/realtimeBridge');
 const { sendSseToAll } = require('../utils/sseHub');
 
+const DEFAULT_CLIENT_URL = 'http://localhost:3000';
+
+const getClientUrl = () => (process.env.CLIENT_URL || DEFAULT_CLIENT_URL).replace(/\/$/, '');
+
+const clearEmailVerificationState = (user) => {
+  user.isEmailVerified = true;
+  user.emailVerifyToken = undefined;
+  user.emailVerifyExpire = undefined;
+  user.emailVerifyCode = undefined;
+  user.emailVerifyCodeExpire = undefined;
+};
+
+const sendVerificationEmail = async (user) => {
+  const rawToken = user.generateEmailVerifyToken();
+  const verificationCode = user.generateEmailVerifyCode();
+  await user.save({ validateBeforeSave: false });
+
+  const verifyUrl = `${getClientUrl()}/#/verify-email/${rawToken}`;
+  const tmpl = emailTemplates.verifyEmail(user.name, verifyUrl, verificationCode);
+  await sendEmail({ to: user.email, ...tmpl });
+};
+
 /**
  * POST /api/auth/register
  */
@@ -40,11 +62,7 @@ exports.register = async (req, res, next) => {
 
     // Send verification email
     try {
-      const rawToken = user.generateEmailVerifyToken();
-      await user.save({ validateBeforeSave: false });
-      const verifyUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/verify-email/${rawToken}`;
-      const tmpl = emailTemplates.verifyEmail(user.name, verifyUrl);
-      await sendEmail({ to: user.email, ...tmpl });
+      await sendVerificationEmail(user);
     } catch (emailErr) {
       console.warn(`[auth] Email verification delivery failed for ${email}: ${emailErr.message}`);
     }
@@ -165,6 +183,12 @@ exports.getMe = async (req, res, next) => {
         doctorUserId: req.user._id,
         online: true,
       });
+      emitToRealtimeBroadcast(SOCKET_EVENTS.DOCTOR_ONLINE, {
+        doctorUserId: req.user._id,
+        online: true,
+      }).catch((socketErr) => {
+        console.warn(`[auth] Realtime doctor online emit failed: ${socketErr.message}`);
+      });
     }
 
     return success(res, { user: user.toSafeJSON(), profile });
@@ -233,9 +257,71 @@ exports.refreshToken = async (req, res, next) => {
 };
 
 /**
+ * POST /api/auth/request-verification
+ */
+exports.requestVerification = async (req, res, next) => {
+  try {
+    const email = req.body.email?.trim?.().toLowerCase();
+    if (!email) return error(res, 'Email is required', 400);
+
+    const user = await User.findOne({ email });
+    if (!user) return error(res, 'No account found with that email', 404);
+    if (user.isEmailVerified) {
+      return success(res, { message: 'Email is already verified' });
+    }
+
+    try {
+      await sendVerificationEmail(user);
+    } catch (emailErr) {
+      return error(res, 'Failed to send verification email. Try again later.', 500);
+    }
+
+    return success(res, {
+      message: 'Verification code sent',
+      email: user.email,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/auth/verify-email
+ */
+exports.verifyEmailCode = async (req, res, next) => {
+  try {
+    const email = req.body.email?.trim?.().toLowerCase();
+    const code = req.body.code?.trim?.();
+
+    if (!email || !code) {
+      return error(res, 'Email and verification code are required', 400);
+    }
+
+    const hashedCode = crypto.createHash('sha256').update(code).digest('hex');
+    const user = await User.findOne({
+      email,
+      emailVerifyCode: hashedCode,
+      emailVerifyCodeExpire: { $gt: Date.now() },
+    });
+    if (!user) return error(res, 'Invalid or expired verification code', 400);
+
+    clearEmailVerificationState(user);
+    await user.save({ validateBeforeSave: false });
+
+    return success(res, {
+      message: 'Email verified successfully',
+      email: user.email,
+      user: user.toSafeJSON(),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * GET /api/auth/verify-email/:token
  */
-exports.verifyEmail = async (req, res, next) => {
+exports.verifyEmailToken = async (req, res, next) => {
   try {
     const hashed = crypto.createHash('sha256').update(req.params.token).digest('hex');
     const user = await User.findOne({
@@ -244,12 +330,14 @@ exports.verifyEmail = async (req, res, next) => {
     });
     if (!user) return error(res, 'Invalid or expired verification link', 400);
 
-    user.isEmailVerified = true;
-    user.emailVerifyToken = undefined;
-    user.emailVerifyExpire = undefined;
+    clearEmailVerificationState(user);
     await user.save({ validateBeforeSave: false });
 
-    return success(res, { message: 'Email verified successfully' });
+    return success(res, {
+      message: 'Email verified successfully',
+      email: user.email,
+      user: user.toSafeJSON(),
+    });
   } catch (err) {
     next(err);
   }
@@ -266,7 +354,7 @@ exports.forgotPassword = async (req, res, next) => {
     const rawToken = user.generatePasswordResetToken();
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password/${rawToken}`;
+    const resetUrl = `${getClientUrl()}/reset-password/${rawToken}`;
     const tmpl = emailTemplates.passwordReset(user.name, resetUrl);
 
     try {

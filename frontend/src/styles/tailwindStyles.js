@@ -1201,6 +1201,16 @@ export const profileStyles = createStyles({
   ...profileGeneratedStyles,
   header,
   greeting: "min-w-0",
+  layout: "grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[280px_minmax(0,1fr)]",
+  headerActions:
+    "flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end max-[680px]:grid max-[680px]:grid-cols-1 max-[680px]:items-stretch [&_button]:max-w-full max-[680px]:[&_button]:w-full",
+  profileCard: merge(card, "min-w-0"),
+  sectionCard: merge(card, "min-w-0"),
+  rightColumn: "min-w-0 space-y-3",
+  infoGrid: "grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2",
+  statsGrid: "grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3",
+  contactValue: "break-all text-[13px] font-bold text-[var(--text)]",
+  infoValue: "break-all text-[13px] font-bold leading-relaxed text-[var(--text)]",
   logoutBtn: merge(logoutButton, "mt-2.5 w-full"),
 });
 export const loginStyles = createStyles(loginGeneratedStyles);

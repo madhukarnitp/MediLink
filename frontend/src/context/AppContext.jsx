@@ -15,8 +15,10 @@ import {
   prescriptionSelection,
 } from "../services/api";
 import {
+  connectSocket,
   disconnectSocket,
   declineVideoCall,
+  EVENTS as SOCKET_EVENTS,
 } from "../services/socket";
 import {
   connectNotificationStream,
@@ -143,6 +145,7 @@ const getDeepLinkTarget = () => {
 
   if (parts.length === 0) return null;
   if (parts[0] === "login") return null;
+  if (parts[0] === "verify-email") return null;
 
   const query = new URLSearchParams(hashQuery || window.location.search);
   const queryParams = Object.fromEntries(query.entries());
@@ -529,6 +532,18 @@ export function AppProvider({ children }) {
     if (isAuthenticated) loadNotifications();
   }, [isAuthenticated, loadNotifications]);
 
+  const dispatchDoctorPresence = useCallback((payload = {}, online) => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(
+      new CustomEvent("medilink:doctor-presence", {
+        detail: {
+          ...payload,
+          online,
+        },
+      }),
+    );
+  }, []);
+
   const syncSession = useCallback((nextUser, nextProfile) => {
     if (nextUser) {
       setUser(nextUser);
@@ -803,18 +818,6 @@ export function AppProvider({ children }) {
       });
     };
 
-    const dispatchDoctorPresence = (payload = {}, online) => {
-      if (typeof window === "undefined") return;
-      window.dispatchEvent(
-        new CustomEvent("medilink:doctor-presence", {
-          detail: {
-            ...payload,
-            online,
-          },
-        }),
-      );
-    };
-
     connectNotificationStream(token, {
       notification: onGenericNotification,
       consultationRequest: onConsultationRequest,
@@ -827,7 +830,29 @@ export function AppProvider({ children }) {
     return () => {
       disconnectNotificationStream();
     };
-  }, [callActivity.busy, isAuthenticated, navigate, showToast]);
+  }, [callActivity.busy, dispatchDoctorPresence, isAuthenticated, navigate, showToast]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !userRef.current) return;
+
+    const token = localStorage.getItem("ml_token");
+    if (!token) return;
+
+    const socket = connectSocket(token);
+    if (!socket) return;
+
+    const onDoctorOnline = (payload = {}) => dispatchDoctorPresence(payload, true);
+    const onDoctorOffline = (payload = {}) =>
+      dispatchDoctorPresence(payload, false);
+
+    socket.on(SOCKET_EVENTS.DOCTOR_ONLINE, onDoctorOnline);
+    socket.on(SOCKET_EVENTS.DOCTOR_OFFLINE, onDoctorOffline);
+
+    return () => {
+      socket.off(SOCKET_EVENTS.DOCTOR_ONLINE, onDoctorOnline);
+      socket.off(SOCKET_EVENTS.DOCTOR_OFFLINE, onDoctorOffline);
+    };
+  }, [dispatchDoctorPresence, isAuthenticated]);
 
   const value = useMemo(
     () => ({
