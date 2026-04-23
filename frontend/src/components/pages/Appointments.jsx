@@ -168,41 +168,70 @@ export default function Appointments() {
 
       {!isDoctor && (
         <form className={styles.bookingPanel} onSubmit={bookAppointment}>
-          <div className={styles.field}>
-            <label>Doctor</label>
-            <select
-              value={form.doctorId}
-              onChange={(event) => updateForm("doctorId", event.target.value)}
+          <div className={styles.bookingIntro}>
+            <div>
+              <h2 className={styles.bookingTitle}>Request a New Appointment</h2>
+              <p className={styles.bookingCopy}>
+                Pick a doctor, choose a suitable slot, and share a short reason
+                so the visit starts with the right context.
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.formGrid}>
+            <label className={styles.formGroup}>
+              <span className={styles.label}>Doctor</span>
+              <select
+                className={styles.select}
+                value={form.doctorId}
+                onChange={(event) => updateForm("doctorId", event.target.value)}
+              >
+                {doctors.map((doctor) => (
+                  <option key={doctor._id} value={doctor._id}>
+                    {doctor.userId?.name || "Doctor"} - {doctor.specialization}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className={styles.formGroup}>
+              <span className={styles.label}>Date and time</span>
+              <input
+                className={styles.input}
+                type="datetime-local"
+                value={form.scheduledFor}
+                onChange={(event) =>
+                  updateForm("scheduledFor", event.target.value)
+                }
+              />
+            </label>
+
+            <label className={`${styles.formGroup} ${styles.fieldWide}`}>
+              <span className={styles.label}>Reason</span>
+              <textarea
+                className={styles.textarea}
+                maxLength={300}
+                placeholder="Describe the concern briefly, such as fever, follow-up, prescription review, or recurring symptoms."
+                value={form.reason}
+                onChange={(event) => updateForm("reason", event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className={styles.formActions}>
+            <p className={styles.formNote}>
+              {doctors.length === 0
+                ? "No doctors are available to book right now."
+                : "Appointments are shared in your doctor's queue as a request first."}
+            </p>
+            <Button
+              className={styles.submitBtn}
+              disabled={saving || doctors.length === 0}
+              type="submit"
             >
-              {doctors.map((doctor) => (
-                <option key={doctor._id} value={doctor._id}>
-                  {doctor.userId?.name || "Doctor"} - {doctor.specialization}
-                </option>
-              ))}
-            </select>
+              {saving ? "Requesting..." : "Request Appointment"}
+            </Button>
           </div>
-          <div className={styles.field}>
-            <label>Date and time</label>
-            <input
-              type="datetime-local"
-              value={form.scheduledFor}
-              onChange={(event) =>
-                updateForm("scheduledFor", event.target.value)
-              }
-            />
-          </div>
-          <div className={styles.fieldWide}>
-            <label>Reason</label>
-            <input
-              maxLength={300}
-              placeholder="Fever, follow-up, report review..."
-              value={form.reason}
-              onChange={(event) => updateForm("reason", event.target.value)}
-            />
-          </div>
-          <Button disabled={saving || doctors.length === 0} type="submit">
-            {saving ? "Requesting..." : "Request Appointment"}
-          </Button>
         </form>
       )}
 
@@ -245,25 +274,31 @@ function AppointmentRow({ appointment, disabled, isDoctor, onAction }) {
 
   return (
     <article className={styles.card}>
-      <div>
-        <div className={styles.cardTitle}>{title}</div>
-        <div className={styles.cardMeta}>
-          {new Date(appointment.scheduledFor).toLocaleString("en-IN", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}{" "}
-          · {subtitle}
+      <div className={styles.cardTop}>
+        <div className={styles.cardInfo}>
+          <div className={styles.cardTitle}>{title}</div>
+          <div className={styles.cardMeta}>
+            {new Date(appointment.scheduledFor).toLocaleString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}{" "}
+            · {subtitle}
+          </div>
         </div>
+        <span
+          className={`${styles.status} ${styles[`status_${appointment.status}`] || ""}`}
+        >
+          {statusLabel(appointment.status)}
+        </span>
       </div>
-      <span className={`${styles.status} ${styles[`status_${appointment.status}`] || ""}`}>
-        {statusLabel(appointment.status)}
-      </span>
+
       <div className={styles.actions}>
         {canConfirm && (
           <Button
+            className={styles.actionBtnPrimary}
             disabled={disabled}
             onClick={() => onAction(appointment, "confirm")}
           >
@@ -273,6 +308,7 @@ function AppointmentRow({ appointment, disabled, isDoctor, onAction }) {
         {canClose && (
           <>
             <Button
+              className={styles.actionBtn}
               disabled={disabled}
               onClick={() => onAction(appointment, "completed")}
               variant="outline"
@@ -280,6 +316,7 @@ function AppointmentRow({ appointment, disabled, isDoctor, onAction }) {
               Complete
             </Button>
             <Button
+              className={styles.actionBtn}
               disabled={disabled}
               onClick={() => onAction(appointment, "missed")}
               variant="outline"
@@ -290,6 +327,7 @@ function AppointmentRow({ appointment, disabled, isDoctor, onAction }) {
         )}
         {canCancel && (
           <Button
+            className={styles.actionBtnGhost}
             disabled={disabled}
             onClick={() => onAction(appointment, "cancel")}
             variant="ghost"

@@ -1017,6 +1017,16 @@ export const adminDashboardStyles = createStyles({
 export const dashboardStyles = createStyles({
   ...dashboardGeneratedStyles,
   greeting: greetingBlock,
+  grid:
+    "grid min-w-0 grid-cols-[minmax(0,1fr)_340px] gap-4 max-[1100px]:grid-cols-[minmax(0,1fr)_320px] max-[900px]:grid-cols-1",
+  left: "min-w-0 space-y-4",
+  right: "min-w-0 space-y-4",
+  quickActions:
+    "grid min-w-0 grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3 max-[640px]:grid-cols-1",
+  quickCard:
+    "group flex min-h-[120px] min-w-0 w-full flex-col gap-3 rounded-med border border-[var(--border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,251,255,0.94))] p-4 text-left shadow-[0_8px_22px_rgba(16,32,51,0.04)] transition hover:-translate-y-0.5 hover:border-[var(--primary-border)] hover:shadow-[0_14px_32px_rgba(16,32,51,0.08)] max-[1180px]:min-h-[92px] max-[1180px]:flex-row max-[1180px]:items-center max-[640px]:min-h-[108px] max-[640px]:flex-col max-[640px]:items-start [&_div]:min-w-0 [&_h3]:text-[14px] [&_h3]:font-bold [&_h3]:text-[var(--text)] [&_p]:mt-1 [&_p]:break-words [&_p]:text-[12px] [&_p]:leading-relaxed [&_p]:text-[var(--muted)]",
+  quickIcon:
+    "flex h-11 w-11 shrink-0 items-center justify-center rounded-med bg-[var(--surface)] text-[18px] text-[var(--primary)]",
 });
 export const doctorDashboardStyles = createStyles({
   ...doctorDashboardGeneratedStyles,
@@ -1132,6 +1142,37 @@ export const createPrescriptionStyles = createStyles({
 export const appointmentsStyles = createStyles({
   ...appointmentsGeneratedStyles,
   header,
+  bookingPanel:
+    "min-w-0 rounded-med border border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_8px_24px_rgba(16,32,51,0.05)]",
+  bookingIntro:
+    "mb-4 flex min-w-0 items-start justify-between gap-3 border-b border-[var(--border)] pb-3",
+  bookingTitle: "font-display text-[16px] font-bold text-[var(--text)]",
+  bookingCopy:
+    "mt-1 max-w-2xl text-[12px] leading-relaxed text-[var(--muted)]",
+  formGrid:
+    "grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 [&_label]:min-w-0 [&_select]:min-h-[38px] [&_select]:w-full [&_select]:rounded-med [&_select]:border [&_select]:border-[var(--border)] [&_select]:bg-[var(--card)] [&_select]:px-3 [&_select]:text-[13px] [&_select]:text-[var(--text)] [&_select]:outline-none [&_select]:transition [&_select]:focus:border-[var(--primary)]",
+  formGroup:
+    "flex min-w-0 flex-col gap-1.5 [&_span]:text-[11px] [&_span]:font-black [&_span]:uppercase [&_span]:tracking-[0.06em] [&_span]:text-[var(--muted)]",
+  fieldWide: "sm:col-span-2",
+  textarea: merge(field, "min-h-[96px]"),
+  formActions:
+    "mt-4 flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-3",
+  formNote: "text-[12px] leading-relaxed text-[var(--muted)]",
+  submitBtn: "w-auto min-w-[152px] whitespace-nowrap",
+  card:
+    "min-w-0 rounded-med border border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_8px_24px_rgba(16,32,51,0.05)] transition hover:border-[var(--primary-border)]",
+  cardTop:
+    "flex min-w-0 items-start justify-between gap-3 max-[720px]:flex-col max-[720px]:items-start",
+  cardInfo: "min-w-0 flex-1",
+  cardTitle: "break-words text-[15px] font-bold text-[var(--text)]",
+  cardMeta: "mt-1 break-words text-[12px] leading-relaxed text-[var(--muted)]",
+  status:
+    "inline-flex shrink-0 items-center justify-center rounded-med border px-2.5 py-1 text-[11px] font-black",
+  actions:
+    "mt-4 flex min-w-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--border)] pt-3",
+  actionBtnPrimary: "w-auto min-w-[104px] whitespace-nowrap",
+  actionBtn: "w-auto min-w-[96px] whitespace-nowrap",
+  actionBtnGhost: "w-auto min-w-[92px] whitespace-nowrap",
 });
 export const prescriptionStyles = createStyles({
   ...prescriptionGeneratedStyles,
@@ -1162,17 +1203,54 @@ export const prescriptionListStyles = createStyles({
 export const healthRecordsStyles = createStyles({
   ...healthRecordsGeneratedStyles,
   greeting: greetingBlock,
-  layout: "flex min-w-0 flex-col gap-4",
+  layout:
+    "grid min-w-0 grid-cols-[minmax(0,1.65fr)_minmax(300px,0.9fr)] items-start gap-4 max-[1100px]:grid-cols-[minmax(0,1fr)_320px] max-[900px]:grid-cols-1",
   mainContent: "min-w-0 space-y-4",
   healthSidebar:
-    "min-w-0 rounded-med border border-[var(--border)] bg-[var(--card)] p-4",
-  trendGrid: "grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3",
-  summaryGrid: "grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3",
-  chartCard: "min-w-0 rounded-med border border-[var(--border)] bg-[var(--card)] p-4",
-  bars: "mt-3 flex h-36 min-w-0 items-end gap-2",
-  barGroup: "flex min-w-0 flex-1 flex-col items-center gap-2",
-  bar: "w-full min-w-[12px] rounded-t-med border border-transparent transition",
+    "sticky top-[calc(var(--topnav-height,52px)+12px)] min-w-0 rounded-med border border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_12px_32px_rgba(16,32,51,0.06)] max-[900px]:static",
+  trendGrid: "grid min-w-0 grid-cols-1 gap-3",
+  summaryGrid: "grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-3",
+  chartCard:
+    "flex min-w-0 flex-col rounded-med border border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_8px_24px_rgba(16,32,51,0.05)]",
+  bars: "mt-3 flex h-44 min-w-0 items-end gap-3",
+  barGroup: "flex min-w-0 flex-1 flex-col items-center justify-end gap-2",
+  bar: "w-full min-w-[16px] rounded-t-med border border-transparent transition-[height]",
   barLabel: "text-[10px] font-bold text-[var(--muted)]",
+  tabs:
+    "inline-flex max-w-full flex-wrap items-center gap-0 overflow-hidden rounded-med border border-[var(--border)] bg-[var(--card)] shadow-[0_4px_18px_rgba(16,32,51,0.04)]",
+  tab:
+    "min-h-[38px] border-r border-[var(--border)] bg-transparent px-4 py-2 text-[12px] font-bold text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--text)] last:border-r-0",
+  activeTab:
+    "bg-[var(--primary-dim)] text-[var(--primary)] shadow-none",
+  recordsList: "flex min-w-0 flex-col gap-3",
+  recordCard:
+    "min-w-0 rounded-med border border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_8px_22px_rgba(16,32,51,0.04)]",
+  recordHeader:
+    "flex min-w-0 items-start justify-between gap-3 border-b border-[var(--border)] pb-3 max-[900px]:flex-col max-[900px]:items-start",
+  recordTitle: "break-words font-display text-[18px] font-bold text-[var(--text)]",
+  recordMeta: "mt-1 break-words text-[12px] leading-relaxed text-[var(--muted)]",
+  itemRow:
+    "grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-med bg-[var(--surface)] p-3 max-[900px]:grid-cols-1",
+  itemPrimary: "break-words font-bold text-[var(--text)]",
+  itemSecondary: "break-words text-right text-[12px] text-[var(--muted)] max-[900px]:text-left",
+  resultList: "flex min-w-0 flex-col gap-2",
+  resultRow:
+    "grid min-w-0 grid-cols-[minmax(120px,0.55fr)_minmax(0,1fr)] items-start gap-3 rounded-med bg-[var(--surface)] p-3 max-[900px]:grid-cols-1",
+  parameter: "text-[12px] font-bold text-[var(--text)]",
+  resultValue: "min-w-0 break-words text-[13px] font-semibold text-[var(--text)]",
+  timeline: "relative flex min-w-0 flex-col gap-4",
+  timelineItem: "grid min-w-0 grid-cols-[24px_minmax(0,1fr)] gap-3",
+  tlContent:
+    "min-w-0 rounded-med border border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_8px_22px_rgba(16,32,51,0.04)]",
+  tlTitle: "break-words text-[15px] font-bold text-[var(--text)]",
+  tlDetail: "mt-2 space-y-1 break-words text-[12px] leading-relaxed text-[var(--muted)]",
+  summaryCard:
+    "min-w-0 rounded-med border border-[var(--border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,251,255,0.94))] p-4 shadow-[0_8px_22px_rgba(16,32,51,0.04)] [&_span]:block [&_span]:text-[12px] [&_span]:font-bold [&_span]:text-[var(--muted)] [&_strong]:mt-1 [&_strong]:block [&_strong]:break-words [&_strong]:font-display [&_strong]:text-[18px] [&_strong]:font-bold [&_strong]:leading-tight [&_strong]:text-[var(--text)]",
+  summaryTitle: "mb-3 font-display text-[15px] font-bold text-[var(--text)]",
+  summaryRow: "flex items-start justify-between gap-3 border-b border-[var(--border)] py-2 text-[12px] text-[var(--muted)] last:border-b-0",
+  sidebarHeader: "mb-3 border-b border-[var(--border)] pb-3 [&_h3]:font-display [&_h3]:text-[16px] [&_h3]:font-bold [&_h3]:text-[var(--text)]",
+  chartTitle: "font-bold text-[var(--text)]",
+  chartSub: "mt-3 text-[12px] text-[var(--muted)]",
 });
 export const ordersStyles = createStyles({
   ...ordersGeneratedStyles,

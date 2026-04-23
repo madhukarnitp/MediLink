@@ -30,6 +30,16 @@ const formatShortDate = (value) => {
   });
 };
 
+const normalizeDisplayText = (value) => {
+  if (typeof value !== "string") return value || "—";
+  return value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/([,;:!?])([^\s])/g, "$1 $2")
+    .replace(/([.])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 const getDoctorName = (record) =>
   record?.doctor?.userId?.name || record?.createdBy?.userId?.name || "Doctor";
 
@@ -322,7 +332,7 @@ function PrescriptionsTab({ rxList }) {
 
             {rx.advice && (
               <div className={styles.instructionsBox}>
-                <strong>Instructions:</strong> {rx.advice}
+                <strong>Instructions:</strong> {normalizeDisplayText(rx.advice)}
               </div>
             )}
           </div>
@@ -366,13 +376,17 @@ function ReportsTab({ reports }) {
                   {report.description && (
                     <div className={styles.resultRow}>
                       <span className={styles.parameter}>Description</span>
-                      <span className={styles.resultValue}>{report.description}</span>
+                      <span className={styles.resultValue}>
+                        {normalizeDisplayText(report.description)}
+                      </span>
                     </div>
                   )}
                   {report.results && (
                     <div className={styles.resultRow}>
                       <span className={styles.parameter}>Results</span>
-                      <span className={styles.resultValue}>{report.results}</span>
+                      <span className={styles.resultValue}>
+                        {normalizeDisplayText(report.results)}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -431,7 +445,9 @@ function VitalsTab({ profile, vitals }) {
                         {label}: {value}
                       </div>
                     ))}
-                    {vital.notes && <div>Notes: {vital.notes}</div>}
+                    {vital.notes && (
+                      <div>Notes: {normalizeDisplayText(vital.notes)}</div>
+                    )}
                   </div>
                 </div>
               </div>

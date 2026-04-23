@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PAGES, useApp } from "../../context/AppContext";
 import { Spinner, ErrorMsg } from "../ui/UI";
 import ChatPanel from "./consultation/ChatPanel";
@@ -62,6 +62,7 @@ function ConsultationRoom({
 }) {
   const autoVideoRequested = useRef(false);
   const autoAnswered = useRef(false);
+  const [leaving, setLeaving] = useState(false);
   const session = useConsultationSession({
     navigate,
     registerCallGuard,
@@ -95,6 +96,26 @@ function ConsultationRoom({
         ? "Accept this consultation to start chat."
         : "Waiting for the doctor to accept this consultation."
       : "This consultation is not active.";
+  const consultationStatus = session.consultation?.status;
+  const leaveLabel =
+    consultationStatus === "active"
+      ? isDoc
+        ? "Finish Consultation"
+        : "Close Consultation"
+      : consultationStatus === "pending"
+        ? isDoc
+          ? "Decline Request"
+          : "Cancel Request"
+        : "Close";
+  const handleLeaveConsultation = async () => {
+    if (leaving) return;
+    setLeaving(true);
+    try {
+      await session.leaveConsultation();
+    } finally {
+      setLeaving(false);
+    }
+  };
   const switchToChat = () => {
     if (isCallModalBusy) {
       showToast("End the video call before switching pages.", "warning");
@@ -199,10 +220,13 @@ function ConsultationRoom({
       <ConsultationHeader
         accepting={session.accepting}
         canAccept={isDoc && isPending}
-        consultationStatus={session.consultation?.status}
+        consultationStatus={consultationStatus}
         onAccept={session.acceptConsultation}
+        onLeave={handleLeaveConsultation}
         peerName={peerName}
         isActive={session.isConsultationActive}
+        leaveLabel={leaveLabel}
+        leaving={leaving}
         socketReady={session.socketReady}
         specialization={specialization}
       />

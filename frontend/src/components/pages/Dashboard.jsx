@@ -280,6 +280,7 @@ function QuickCard({ icon, title, subtitle, variant, iconBg, onClick }) {
     <button
       className={`${styles.quickCard} ${variant === "sos" ? styles.sosCard : ""}`}
       onClick={onClick}
+      type="button"
     >
       <span className={`${styles.quickIcon} ${iconClass}`}>{icon}</span>
       <div>
