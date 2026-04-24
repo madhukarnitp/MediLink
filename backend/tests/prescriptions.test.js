@@ -23,7 +23,6 @@ beforeAll(async () => {
     password: 'password123',
     role: 'patient',
   });
-  patientToken = pr.body.data.token;
   const patientUser = pr.body.data.user;
   const patientProfile = await Patient.findOne({ userId: patientUser._id });
   patientId = patientProfile._id.toString();
@@ -38,7 +37,26 @@ beforeAll(async () => {
     regNo: 'PRESC-DR-001',
     price: 400,
   });
-  doctorToken = dr.body.data.token;
+
+  await User.updateMany(
+    { email: { $in: ['prescpt@test.com', 'prescdr@test.com'] } },
+    { isEmailVerified: true }
+  );
+  await Doctor.findOneAndUpdate(
+    { userId: dr.body.data.user._id },
+    { isVerified: true, online: true }
+  );
+
+  const patientLogin = await request(app).post('/api/auth/login').send({
+    email: 'prescpt@test.com',
+    password: 'password123',
+  });
+  const doctorLogin = await request(app).post('/api/auth/login').send({
+    email: 'prescdr@test.com',
+    password: 'password123',
+  });
+  patientToken = patientLogin.body.data.token;
+  doctorToken = doctorLogin.body.data.token;
 });
 
 afterAll(async () => {

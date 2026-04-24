@@ -27,6 +27,8 @@ export default function DoctorList() {
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [maxPrice, setMaxPrice] = useState(2000);
   const [starting, setStarting] = useState(null);
+  const [intakeDoctor, setIntakeDoctor] = useState(null);
+  const [intakeForm, setIntakeForm] = useState(getEmptyIntakeForm);
   const presenceRefreshTimer = useRef(null);
   const searchTerm = (pageParams.search || "").trim().toLowerCase();
   const visibleDoctors = useMemo(
@@ -129,17 +131,21 @@ export default function DoctorList() {
     return () => window.clearInterval(refresh);
   }, [load]);
 
-  const handleConsult = async (doc) => {
+  const handleConsult = async (doc, form) => {
     setStarting(doc._id);
     try {
       const { consultations } = await import("../../services/api");
+      const intake = buildIntakePayload(form);
       const r = await consultations.start(
         doc._id,
-        `Consultation with ${doc.userId?.name || "Doctor"}`,
+        intake.chiefComplaint,
+        intake,
       );
       showToast(
-        "Consultation request sent. The doctor has been notified and will connect when ready.",
+        "Request sent with your health details. The doctor can prescribe directly or connect with you.",
       );
+      setIntakeDoctor(null);
+      setIntakeForm(getEmptyIntakeForm());
       navigate(PAGES.CONSULTATION, {
         consultationId: r.data._id,
         mode: "chat",
@@ -160,6 +166,16 @@ export default function DoctorList() {
     } finally {
       setStarting(null);
     }
+  };
+
+  const openIntake = (doc) => {
+    setIntakeDoctor(doc);
+    setIntakeForm(getEmptyIntakeForm());
+  };
+
+  const closeIntake = () => {
+    if (starting) return;
+    setIntakeDoctor(null);
   };
 
   return (
@@ -263,7 +279,7 @@ export default function DoctorList() {
                     className={`${styles.cardButton} ${
                       doc.online ? styles.consultButton : styles.unavailableButton
                     }`}
-                    onClick={doc.online ? () => handleConsult(doc) : undefined}
+                    onClick={doc.online ? () => openIntake(doc) : undefined}
                   >
                     {starting === doc._id
                       ? "Starting..."
@@ -289,6 +305,196 @@ export default function DoctorList() {
           )}
         </div>
       )}
+      {intakeDoctor ? (
+        <ConsultIntakeModal
+          doctor={intakeDoctor}
+          form={intakeForm}
+          onChange={setIntakeForm}
+          onClose={closeIntake}
+          onSubmit={() => handleConsult(intakeDoctor, intakeForm)}
+          submitting={starting === intakeDoctor._id}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function getEmptyIntakeForm() {
+  return {
+    chiefComplaint: "",
+    symptoms: "",
+    duration: "",
+    severity: "moderate",
+    existingConditions: "",
+    currentMedicines: "",
+    allergies: "",
+    notes: "",
+  };
+}
+
+function buildIntakePayload(form) {
+  return {
+    chiefComplaint: form.chiefComplaint.trim(),
+    symptoms: form.symptoms
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+    duration: form.duration.trim(),
+    severity: form.severity,
+    existingConditions: form.existingConditions.trim(),
+    currentMedicines: form.currentMedicines.trim(),
+    allergies: form.allergies.trim(),
+    notes: form.notes.trim(),
+  };
+}
+
+function ConsultIntakeModal({
+  doctor,
+  form,
+  onChange,
+  onClose,
+  onSubmit,
+  submitting,
+}) {
+  const doctorName = doctor.userId?.name || "Doctor";
+  const issueLength = form.chiefComplaint.trim().length;
+  const canSubmit = issueLength >= 10 && !submitting;
+  const update = (key, value) => onChange((current) => ({ ...current, [key]: value }));
+
+  return (
+    <div
+      className="fixed inset-0 z-[1100] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Share consultation details"
+    >
+      <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-med border border-[var(--border)] bg-[var(--card)] shadow-[0_24px_70px_rgba(15,23,42,0.24)]">
+        <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] p-4">
+          <div className="min-w-0">
+            <h2 className="m-0 text-[18px] font-black text-[var(--text)]">
+              Share details for {doctorName}
+            </h2>
+            <p className="mt-1 text-[13px] text-[var(--muted)]">
+              This helps the doctor decide whether a prescription is enough or chat/call is needed.
+            </p>
+          </div>
+          <button
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-med border border-[var(--border)] bg-[var(--surface)] text-[18px] font-bold text-[var(--muted)] hover:text-[var(--text)]"
+            onClick={onClose}
+            disabled={submitting}
+            type="button"
+            aria-label="Close"
+          >
+            x
+          </button>
+        </div>
+
+        <div className="grid min-w-0 gap-3 overflow-y-auto p-4 sm:grid-cols-2">
+          <label className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
+            <span className="text-[13px] font-bold text-[var(--text)]">Main issue</span>
+            <textarea
+              className="min-h-[96px] rounded-med border border-[var(--border)] bg-[var(--surface)] p-3 text-[13px] text-[var(--text)] outline-none focus:border-[var(--primary)]"
+              value={form.chiefComplaint}
+              onChange={(e) => update("chiefComplaint", e.target.value)}
+              placeholder="Describe the problem, when it started, and what worries you most."
+              maxLength={500}
+            />
+          </label>
+
+          <label className="flex min-w-0 flex-col gap-1.5">
+            <span className="text-[13px] font-bold text-[var(--text)]">Symptoms</span>
+            <input
+              className="min-h-[40px] rounded-med border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] text-[var(--text)] outline-none focus:border-[var(--primary)]"
+              value={form.symptoms}
+              onChange={(e) => update("symptoms", e.target.value)}
+              placeholder="Fever, cough, headache"
+            />
+          </label>
+
+          <label className="flex min-w-0 flex-col gap-1.5">
+            <span className="text-[13px] font-bold text-[var(--text)]">Duration</span>
+            <input
+              className="min-h-[40px] rounded-med border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] text-[var(--text)] outline-none focus:border-[var(--primary)]"
+              value={form.duration}
+              onChange={(e) => update("duration", e.target.value)}
+              placeholder="2 days, 1 week"
+              maxLength={120}
+            />
+          </label>
+
+          <label className="flex min-w-0 flex-col gap-1.5">
+            <span className="text-[13px] font-bold text-[var(--text)]">Severity</span>
+            <select
+              className="min-h-[40px] rounded-med border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] text-[var(--text)] outline-none focus:border-[var(--primary)]"
+              value={form.severity}
+              onChange={(e) => update("severity", e.target.value)}
+            >
+              <option value="mild">Mild</option>
+              <option value="moderate">Moderate</option>
+              <option value="severe">Severe</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </label>
+
+          <label className="flex min-w-0 flex-col gap-1.5">
+            <span className="text-[13px] font-bold text-[var(--text)]">Allergies</span>
+            <input
+              className="min-h-[40px] rounded-med border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] text-[var(--text)] outline-none focus:border-[var(--primary)]"
+              value={form.allergies}
+              onChange={(e) => update("allergies", e.target.value)}
+              placeholder="None, penicillin, dust"
+              maxLength={300}
+            />
+          </label>
+
+          <label className="flex min-w-0 flex-col gap-1.5">
+            <span className="text-[13px] font-bold text-[var(--text)]">Current medicines</span>
+            <textarea
+              className="min-h-[72px] rounded-med border border-[var(--border)] bg-[var(--surface)] p-3 text-[13px] text-[var(--text)] outline-none focus:border-[var(--primary)]"
+              value={form.currentMedicines}
+              onChange={(e) => update("currentMedicines", e.target.value)}
+              placeholder="Medicine name and dose if known"
+              maxLength={500}
+            />
+          </label>
+
+          <label className="flex min-w-0 flex-col gap-1.5">
+            <span className="text-[13px] font-bold text-[var(--text)]">Existing conditions</span>
+            <textarea
+              className="min-h-[72px] rounded-med border border-[var(--border)] bg-[var(--surface)] p-3 text-[13px] text-[var(--text)] outline-none focus:border-[var(--primary)]"
+              value={form.existingConditions}
+              onChange={(e) => update("existingConditions", e.target.value)}
+              placeholder="Diabetes, BP, asthma, pregnancy"
+              maxLength={500}
+            />
+          </label>
+
+          <label className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
+            <span className="text-[13px] font-bold text-[var(--text)]">Anything else</span>
+            <textarea
+              className="min-h-[72px] rounded-med border border-[var(--border)] bg-[var(--surface)] p-3 text-[13px] text-[var(--text)] outline-none focus:border-[var(--primary)]"
+              value={form.notes}
+              onChange={(e) => update("notes", e.target.value)}
+              placeholder="Reports, home readings, or special concerns"
+              maxLength={1000}
+            />
+          </label>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] p-4">
+          <span className={`text-[12px] font-bold ${canSubmit ? "text-[var(--muted)]" : "text-amber-700"}`}>
+            {issueLength < 10 ? "Add at least 10 characters in main issue." : "Ready to send to doctor."}
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={onSubmit} disabled={!canSubmit}>
+              {submitting ? "Sending..." : "Send request"}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

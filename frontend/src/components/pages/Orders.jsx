@@ -26,7 +26,7 @@ export default function Orders() {
 
       <OrdersHero
         eta={order.summary.eta}
-        itemCount={order.medicines.length}
+        itemCount={order.availableMedicines.length}
         prescription={order.prescription}
         total={order.summary.total}
       />
@@ -36,6 +36,12 @@ export default function Orders() {
           <PrescriptionItems
             medicines={order.medicines}
             prescription={order.prescription}
+            unavailableMedicines={order.unavailableMedicines}
+          />
+          <DeliveryAddressForm
+            address={order.address}
+            errors={order.addressErrors}
+            onChange={order.setAddress}
           />
           <FulfillmentSelector
             deliveryMode={order.deliveryMode}
@@ -47,7 +53,7 @@ export default function Orders() {
         <div className={styles.right}>
           <OrderSummaryCard
             deliveryMode={order.deliveryMode}
-            itemCount={order.medicines.length}
+            itemCount={order.availableMedicines.length}
             latestOrder={order.latestOrder}
             onPlaceOrder={order.placeOrder}
             ordered={order.ordered}
@@ -55,6 +61,7 @@ export default function Orders() {
             placing={order.placing}
             summary={order.summary}
             user={user}
+            disabled={!order.canPlaceOrder}
           />
           <OrderTracker
             currentStep={order.currentStep}
@@ -66,6 +73,62 @@ export default function Orders() {
 
       <PreviousOrders orders={order.orderHistory} />
     </div>
+  );
+}
+
+function DeliveryAddressForm({ address, errors, onChange }) {
+  const update = (key, value) =>
+    onChange((current) => ({ ...current, [key]: value }));
+
+  return (
+    <section className="mt-4 rounded-med border border-[var(--border)] bg-[var(--card)] p-4">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className={styles.colTitle}>Delivery Address</h2>
+          <p className={styles.emptyText}>
+            Medicines will be delivered to this address after order confirmation.
+          </p>
+        </div>
+        {errors.length ? (
+          <span className="shrink-0 rounded-med bg-amber-100 px-2.5 py-1 text-[11px] font-black text-amber-800">
+            Required
+          </span>
+        ) : (
+          <span className="shrink-0 rounded-med bg-[var(--primary-dim)] px-2.5 py-1 text-[11px] font-black text-[var(--primary)]">
+            Complete
+          </span>
+        )}
+      </div>
+      <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+        <AddressInput label="Recipient name" value={address.name} onChange={(value) => update("name", value)} />
+        <AddressInput label="Phone" value={address.phone} onChange={(value) => update("phone", value)} />
+        <AddressInput className="sm:col-span-2" label="Street address" value={address.street} onChange={(value) => update("street", value)} />
+        <AddressInput label="City" value={address.city} onChange={(value) => update("city", value)} />
+        <AddressInput label="State" value={address.state} onChange={(value) => update("state", value)} />
+        <AddressInput label="Country" value={address.country} onChange={(value) => update("country", value)} />
+        <AddressInput label="Pincode" value={address.pincode} onChange={(value) => update("pincode", value)} />
+      </div>
+      {errors.length ? (
+        <p className="mt-3 text-[12px] font-bold text-amber-700">
+          Missing: {errors.join(", ")}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function AddressInput({ className = "", label, onChange, value }) {
+  return (
+    <label className={`min-w-0 ${className}`}>
+      <span className="mb-1.5 block text-[12px] font-bold text-[var(--text)]">
+        {label}
+      </span>
+      <input
+        className="min-h-[40px] w-full rounded-med border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] text-[var(--text)] outline-none focus:border-[var(--primary)]"
+        value={value || ""}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
   );
 }
 

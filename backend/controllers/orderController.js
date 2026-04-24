@@ -44,7 +44,7 @@ exports.createOrder = async (req, res, next) => {
       if (!prescription) return error(res, 'Prescription not found or not yours', 404);
     }
 
-    const orderItems = await normalizeItems(items, prescription);
+    const orderItems = await normalizeItems(items, prescription, { requireAvailable: true });
     if (orderItems.length === 0) {
       return error(res, 'Order must include items or a prescription with medicines', 400);
     }
@@ -64,6 +64,31 @@ exports.createOrder = async (req, res, next) => {
 
     const populated = await order.populate(POPULATE_FIELDS);
     return success(res, populated, 201);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getPrescriptionOrderPreview = async (req, res, next) => {
+  try {
+    const patient = await Patient.findOne({ userId: req.user._id }).select('_id').lean();
+    if (!patient) return error(res, 'Patient profile not found', 404);
+
+    const prescription = await Prescription.findOne({
+      _id: req.params.prescriptionId,
+      createdFor: patient._id,
+    }).lean({ virtuals: true });
+    if (!prescription) return error(res, 'Prescription not found or not yours', 404);
+
+    const items = await normalizeItems(null, prescription, { requireAvailable: false });
+    return success(res, {
+      prescriptionId: prescription._id,
+      rxId: prescription.rxId,
+      diagnosis: prescription.diagnosis,
+      items,
+      availableItems: items.filter((item) => item.availabilityStatus === 'available'),
+      unavailableItems: items.filter((item) => item.availabilityStatus !== 'available'),
+    });
   } catch (err) {
     next(err);
   }
@@ -193,7 +218,7 @@ exports.cancelOrder = async (req, res, next) => {
   }
 };
 
-async function normalizeItems(items, prescription) {
+async function normalizeItems(items, prescription, { requireAvailable = false } = {}) {
   const sourceItems =
     Array.isArray(items) && items.length > 0
       ? items
@@ -203,7 +228,7 @@ async function normalizeItems(items, prescription) {
 
   if (sourceItems.length === 0) return [];
 
-  return Promise.all(
+  const normalized = await Promise.all(
     sourceItems.map(async (item) => {
       const inventory = await findMatchingMedicine(item);
       const quantity = Number(item.quantity || 1);
@@ -224,6 +249,19 @@ async function normalizeItems(items, prescription) {
       };
     })
   );
+
+  if (requireAvailable) {
+    const unavailable = normalized.filter((item) => item.availabilityStatus !== 'available');
+    if (unavailable.length > 0) {
+      const names = unavailable.map((item) => item.name).join(', ');
+      throw Object.assign(
+        new Error(`Only available medicines can be ordered. Unavailable: ${names}`),
+        { statusCode: 400 }
+      );
+    }
+  }
+
+  return normalized;
 }
 
 async function findMatchingMedicine(item = {}) {

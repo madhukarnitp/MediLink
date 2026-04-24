@@ -20,6 +20,19 @@ const { ROLES } = require('../utils/constants');
 const startRules = [
   body('doctorId').isMongoId().withMessage('Valid doctor ID required'),
   body('reason').optional().isLength({ max: 300 }),
+  body('intake').isObject().withMessage('Patient intake is required'),
+  body('intake.chiefComplaint')
+    .trim()
+    .isLength({ min: 10, max: 500 })
+    .withMessage('Issue must be 10-500 characters'),
+  body('intake.symptoms').optional().isArray({ max: 12 }),
+  body('intake.symptoms.*').optional().trim().isLength({ max: 80 }),
+  body('intake.duration').optional().trim().isLength({ max: 120 }),
+  body('intake.severity').optional().isIn(['mild', 'moderate', 'severe', 'urgent', '']),
+  body('intake.existingConditions').optional().trim().isLength({ max: 500 }),
+  body('intake.currentMedicines').optional().trim().isLength({ max: 500 }),
+  body('intake.allergies').optional().trim().isLength({ max: 300 }),
+  body('intake.notes').optional().trim().isLength({ max: 1000 }),
 ];
 
 const messageRules = [

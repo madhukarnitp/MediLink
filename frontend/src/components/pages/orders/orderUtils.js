@@ -30,7 +30,11 @@ export const getInitials = (name) =>
     .slice(0, 2) || "U";
 
 export const getOrderSummary = (medicines, deliveryMode) => {
-  const basePrice = medicines.length * 80;
+  const basePrice = medicines.reduce(
+    (sum, medicine) =>
+      sum + Number(medicine.quantity || 1) * Number(medicine.unitPrice || 0),
+    0,
+  );
   const delivery = deliveryMode === "delivery" ? 30 : 0;
   const packaging = medicines.length > 0 ? 10 : 0;
   const discount = medicines.length >= 3 ? 40 : 0;

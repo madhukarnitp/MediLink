@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, param, query } = require('express-validator');
 const {
   createOrder,
+  getPrescriptionOrderPreview,
   getOrders,
   getOrderById,
   updateOrderStatus,
@@ -60,6 +61,14 @@ const cancelRules = [
 ];
 
 router.get('/', protect, listRules, validate, getOrders);
+router.get(
+  '/prescriptions/:prescriptionId/availability',
+  protect,
+  authorize(ROLES.PATIENT),
+  param('prescriptionId').isMongoId().withMessage('Invalid prescriptionId'),
+  validate,
+  getPrescriptionOrderPreview
+);
 router.post('/', protect, authorize(ROLES.PATIENT), createRules, validate, createOrder);
 router.get('/:id', protect, objectIdRule('id'), validate, getOrderById);
 router.put('/:id/status', protect, authorize(ROLES.ADMIN), updateStatusRules, validate, updateOrderStatus);

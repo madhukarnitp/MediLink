@@ -10,6 +10,28 @@ const reviewSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const intakeSchema = new mongoose.Schema(
+  {
+    chiefComplaint: {
+      type: String,
+      trim: true,
+      maxlength: [500, 'Issue cannot exceed 500 characters'],
+    },
+    symptoms: [{ type: String, trim: true, maxlength: 80 }],
+    duration: { type: String, trim: true, maxlength: 120 },
+    severity: {
+      type: String,
+      enum: ['mild', 'moderate', 'severe', 'urgent', ''],
+      default: '',
+    },
+    existingConditions: { type: String, trim: true, maxlength: 500 },
+    currentMedicines: { type: String, trim: true, maxlength: 500 },
+    allergies: { type: String, trim: true, maxlength: 300 },
+    notes: { type: String, trim: true, maxlength: 1000 },
+  },
+  { _id: false }
+);
+
 const consultationSchema = new mongoose.Schema(
   {
     patient: {
@@ -32,6 +54,7 @@ const consultationSchema = new mongoose.Schema(
       trim: true,
       maxlength: [300, 'Reason cannot exceed 300 characters'],
     },
+    intake: intakeSchema,
     startedAt: { type: Date },
     endedAt: { type: Date },
     duration: { type: Number },

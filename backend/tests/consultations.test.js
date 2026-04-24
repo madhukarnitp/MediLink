@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const { app } = require('../server');
 const Consultation = require('../models/Consultation');
 const Doctor = require('../models/Doctor');
+const User = require('../models/User');
 
 const MONGO_URI = process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/medilink_test';
 
@@ -24,7 +25,6 @@ beforeAll(async () => {
     password: 'password123',
     role: 'patient',
   });
-  patientToken = patientRes.body.data.token;
 
   const doctorRes = await request(app).post('/api/auth/register').send({
     name: 'Dr. Consult',
@@ -36,10 +36,26 @@ beforeAll(async () => {
     regNo: 'CONSULT-DR-001',
     price: 500,
   });
-  doctorToken = doctorRes.body.data.token;
+  await User.updateMany(
+    { email: { $in: ['consult.patient@test.com', 'consult.doctor@test.com'] } },
+    { isEmailVerified: true }
+  );
 
   const doctor = await Doctor.findOne({ userId: doctorRes.body.data.user._id });
+  doctor.isVerified = true;
+  await doctor.save();
   doctorProfileId = doctor._id.toString();
+
+  const patientLogin = await request(app).post('/api/auth/login').send({
+    email: 'consult.patient@test.com',
+    password: 'password123',
+  });
+  const doctorLogin = await request(app).post('/api/auth/login').send({
+    email: 'consult.doctor@test.com',
+    password: 'password123',
+  });
+  patientToken = patientLogin.body.data.token;
+  doctorToken = doctorLogin.body.data.token;
 });
 
 afterAll(async () => {
@@ -55,6 +71,12 @@ describe('Consultation ending flow', () => {
       .send({
         doctorId: doctorProfileId,
         reason: 'Video consultation test',
+        intake: {
+          chiefComplaint: 'Video consultation test with cough and fever',
+          symptoms: ['cough', 'fever'],
+          duration: '2 days',
+          severity: 'moderate',
+        },
       });
 
     consultationId = startRes.body.data._id;
@@ -85,6 +107,12 @@ describe('Consultation ending flow', () => {
       .send({
         doctorId: doctorProfileId,
         reason: 'Retry from call button',
+        intake: {
+          chiefComplaint: 'Retry from call button after connection issue',
+          symptoms: ['cough'],
+          duration: '2 days',
+          severity: 'moderate',
+        },
       });
 
     expect(res.statusCode).toBe(200);

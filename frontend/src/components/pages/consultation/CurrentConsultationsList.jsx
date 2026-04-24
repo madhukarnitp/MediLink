@@ -61,6 +61,16 @@ export default function CurrentConsultationsList({ isCallBusy = false, navigate,
     });
   };
 
+  const createPrescription = (consultation) => {
+    const patientId = consultation?.patient?._id;
+    if (!patientId) return;
+    navigate(PAGES.CREATE_PRESCRIPTION, {
+      patientId,
+      consultationId: consultation._id,
+      intake: consultation.intake,
+    });
+  };
+
   if (loading) {
     return (
       <InlineSkeleton className="min-h-[260px] p-8" lines={5} showAvatar />
@@ -129,17 +139,26 @@ export default function CurrentConsultationsList({ isCallBusy = false, navigate,
                   <p className="mb-2 text-[13px] text-med-text">
                     {consultation.reason || "General consultation"}
                   </p>
+                  {isDoctor && <IntakeSummary intake={consultation.intake} />}
                   <div className="flex flex-wrap gap-2.5 text-xs text-med-muted">
                     <span>{detail}</span>
                     <span>{formatDateTime(time)}</span>
                   </div>
                 </div>
                 <div className="ml-auto flex shrink-0 items-center justify-end gap-2.5 max-sm:w-full max-sm:flex-row">
+                  {isDoctor && !consultation.prescription && (
+                    <Button
+                      variant="outline"
+                      onClick={() => createPrescription(consultation)}
+                    >
+                      Prescribe
+                    </Button>
+                  )}
                   <Button
                     variant={isActive ? "outline" : "primary"}
                     onClick={() => openRoom(consultation._id)}
                   >
-                    Chat
+                    {isDoctor && !isActive ? "Accept / Chat" : "Chat"}
                   </Button>
                   <Button
                     variant="primary"
@@ -154,6 +173,37 @@ export default function CurrentConsultationsList({ isCallBusy = false, navigate,
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function IntakeSummary({ intake }) {
+  if (!intake) return null;
+  const details = [
+    intake.duration ? `Duration: ${intake.duration}` : "",
+    intake.severity ? `Severity: ${intake.severity}` : "",
+    intake.allergies ? `Allergies: ${intake.allergies}` : "",
+    intake.currentMedicines ? `Medicines: ${intake.currentMedicines}` : "",
+  ].filter(Boolean);
+
+  return (
+    <div className="mb-3 rounded-med border border-med-border bg-med-card2 p-3 text-[12px] text-med-muted">
+      {intake.symptoms?.length ? (
+        <div className="mb-1 font-bold text-med-text">
+          Symptoms: {intake.symptoms.join(", ")}
+        </div>
+      ) : null}
+      {details.length ? (
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {details.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
+      ) : null}
+      {intake.existingConditions ? (
+        <div className="mt-1">Conditions: {intake.existingConditions}</div>
+      ) : null}
+      {intake.notes ? <div className="mt-1">Notes: {intake.notes}</div> : null}
     </div>
   );
 }

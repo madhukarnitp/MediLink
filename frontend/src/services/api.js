@@ -542,6 +542,8 @@ export const admin = {
 export const orders = {
   create: (payload) =>
     req("/orders", { method: "POST", body: JSON.stringify(payload) }),
+  previewPrescription: (prescriptionId) =>
+    req(`/orders/prescriptions/${prescriptionId}/availability`),
   getAll: (p = {}) =>
     req(`/orders?${new URLSearchParams(p)}`, { cachePolicy: "persist" }),
   getById: (id) => req(`/orders/${id}`, { cachePolicy: "persist" }),
@@ -578,10 +580,10 @@ export const prescriptions = {
 };
 
 export const consultations = {
-  start: (doctorId, reason) =>
+  start: (doctorId, reason, intake) =>
     req("/consultations", {
       method: "POST",
-      body: JSON.stringify({ doctorId, reason }),
+      body: JSON.stringify({ doctorId, reason, intake }),
     }),
   getById: (id) => req(`/consultations/${id}`, { cachePolicy: "persist" }),
   accept: (id) => req(`/consultations/${id}/accept`, { method: "PUT" }),

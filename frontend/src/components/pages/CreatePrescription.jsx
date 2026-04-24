@@ -55,6 +55,7 @@ export default function CreatePrescription() {
   const [followUp, setFollowUp] = useState(false);
   const [followUpDate, setFollowUpDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const intake = pageParams?.intake || null;
 
   useEffect(() => {
     (async () => {
@@ -86,6 +87,30 @@ export default function CreatePrescription() {
       }
     })();
   }, [pageParams?.patientId]);
+
+  useEffect(() => {
+    if (!intake || diagnosis || instructions) return;
+    const symptomText = intake.symptoms?.length
+      ? ` Symptoms: ${intake.symptoms.join(", ")}.`
+      : "";
+    const durationText = intake.duration ? ` Duration: ${intake.duration}.` : "";
+    const severityText = intake.severity ? ` Severity: ${intake.severity}.` : "";
+    setDiagnosis(
+      [intake.chiefComplaint, symptomText, durationText, severityText]
+        .filter(Boolean)
+        .join("")
+        .trim(),
+    );
+    const safetyNotes = [
+      intake.allergies ? `Allergies: ${intake.allergies}` : "",
+      intake.currentMedicines ? `Current medicines: ${intake.currentMedicines}` : "",
+      intake.existingConditions ? `Existing conditions: ${intake.existingConditions}` : "",
+      intake.notes ? `Patient notes: ${intake.notes}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    if (safetyNotes) setInstructions(safetyNotes);
+  }, [diagnosis, instructions, intake]);
 
   const filtered = patients.filter((patient) =>
     getPatientSearchText(patient).includes(search.trim().toLowerCase()),
@@ -220,6 +245,7 @@ export default function CreatePrescription() {
           <div className={styles.stepContent}>
             <h2>Prescription Details</h2>
             <p className="break-words">Patient: {getPatientName(selectedPatient)}</p>
+            <IntakePanel intake={intake} />
             <div className={styles.formGroup}>
               <label>Diagnosis</label>
               <textarea
@@ -388,6 +414,40 @@ export default function CreatePrescription() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function IntakePanel({ intake }) {
+  if (!intake) return null;
+  const rows = [
+    ["Issue", intake.chiefComplaint],
+    ["Symptoms", intake.symptoms?.join(", ")],
+    ["Duration", intake.duration],
+    ["Severity", intake.severity],
+    ["Allergies", intake.allergies],
+    ["Medicines", intake.currentMedicines],
+    ["Conditions", intake.existingConditions],
+    ["Notes", intake.notes],
+  ].filter(([, value]) => value);
+
+  if (!rows.length) return null;
+
+  return (
+    <div className="rounded-med border border-[var(--primary-border)] bg-[var(--primary-dim)] p-3">
+      <div className="text-[12px] font-black uppercase tracking-[0.04em] text-[var(--primary)]">
+        Patient Intake
+      </div>
+      <div className="mt-2 grid min-w-0 gap-2 sm:grid-cols-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="min-w-0">
+            <div className="text-[11px] font-bold text-[var(--muted)]">{label}</div>
+            <div className="break-words text-[13px] font-bold text-[var(--text)]">
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

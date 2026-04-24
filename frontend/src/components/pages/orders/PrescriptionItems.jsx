@@ -1,7 +1,11 @@
 import { Badge } from "../../ui/UI";
 import { ordersStyles as styles } from "../../../styles/tailwindStyles";
 
-export default function PrescriptionItems({ medicines, prescription }) {
+export default function PrescriptionItems({
+  medicines,
+  prescription,
+  unavailableMedicines = [],
+}) {
   return (
     <>
       <div
@@ -30,6 +34,13 @@ export default function PrescriptionItems({ medicines, prescription }) {
               medicine={medicine}
             />
           ))}
+          {unavailableMedicines.length > 0 && (
+            <div className="rounded-med border border-amber-200 bg-amber-50 p-3 text-[12px] font-bold text-amber-800">
+              {unavailableMedicines.length} prescribed medicine
+              {unavailableMedicines.length === 1 ? " is" : "s are"} unavailable
+              and will not be orderable until inventory is updated.
+            </div>
+          )}
         </div>
       )}
     </>
@@ -53,8 +64,12 @@ function MedicineRow({ medicine }) {
       <div
         className={`${styles.medRight} max-[520px]:items-end max-[520px]:gap-1`}
       >
-        <Badge type="success">In stock</Badge>
-        <span className={`${styles.medPrice} max-[520px]:text-sm`}>₹80</span>
+        <Badge type={medicine.availabilityStatus === "available" ? "success" : "warning"}>
+          {medicine.availabilityStatus === "available" ? "In stock" : "Unavailable"}
+        </Badge>
+        <span className={`${styles.medPrice} max-[520px]:text-sm`}>
+          ₹{medicine.unitPrice || 0}
+        </span>
       </div>
     </div>
   );

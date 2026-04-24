@@ -12,6 +12,7 @@ export default function OrderSummaryCard({
   placing,
   summary,
   user,
+  disabled,
 }) {
   return (
     <div className={styles.cartCard}>
@@ -42,7 +43,7 @@ export default function OrderSummaryCard({
         fullWidth
         className="whitespace-normal text-center leading-tight"
         onClick={onPlaceOrder}
-        disabled={placing || itemCount === 0}
+        disabled={placing || disabled || itemCount === 0}
       >
         {placing
           ? "Placing order..."

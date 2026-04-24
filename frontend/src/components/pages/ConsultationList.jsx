@@ -111,6 +111,7 @@ export default function ConsultationList() {
     navigate(PAGES.CREATE_PRESCRIPTION, {
       patientId,
       consultationId: consultation._id,
+      intake: consultation.intake,
     });
   };
 
@@ -296,6 +297,8 @@ function ConsultationDetails({
             </div>
           ) : null}
 
+          <IntakeDetails intake={consultation?.intake} />
+
           {consultation?.review?.rating ? (
             <div className={styles.reviewBox}>
               <span>{isDoctor ? "Patient Rating" : "Your Rating"}</span>
@@ -322,7 +325,7 @@ function ConsultationDetails({
               <Button variant="primary" onClick={() => onOpenPrescription(prescription)}>
                 View Prescription
               </Button>
-            ) : isDoctor && consultation?.status === "completed" ? (
+            ) : isDoctor && consultation?.status !== "cancelled" ? (
               <Button variant="primary" onClick={() => onCreatePrescription(consultation)}>
                 Create Prescription
               </Button>
@@ -370,6 +373,43 @@ function ConsultationDetails({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+function IntakeDetails({ intake }) {
+  if (!intake) return null;
+  const rows = [
+    ["Main Issue", intake.chiefComplaint],
+    ["Symptoms", intake.symptoms?.join(", ")],
+    ["Duration", intake.duration],
+    ["Severity", intake.severity],
+    ["Allergies", intake.allergies],
+    ["Current Medicines", intake.currentMedicines],
+    ["Existing Conditions", intake.existingConditions],
+    ["Other Notes", intake.notes],
+  ].filter(([, value]) => value);
+
+  if (!rows.length) return null;
+
+  return (
+    <div className={styles.notesBox}>
+      <span>Patient Intake</span>
+      <div className="mt-2 grid min-w-0 gap-2 sm:grid-cols-2">
+        {rows.map(([label, value]) => (
+          <div
+            key={label}
+            className="min-w-0 rounded-med border border-[var(--border)] bg-[var(--card)] p-2.5"
+          >
+            <div className="text-[11px] font-black uppercase tracking-[0.04em] text-[var(--muted)]">
+              {label}
+            </div>
+            <div className="mt-1 break-words text-[13px] font-bold text-[var(--text)]">
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

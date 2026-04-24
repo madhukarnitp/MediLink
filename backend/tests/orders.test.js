@@ -6,6 +6,7 @@ const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
 const Prescription = require('../models/Prescription');
 const Order = require('../models/Order');
+const Medicine = require('../models/Medicine');
 const { ROLES } = require('../utils/constants');
 
 const MONGO_URI = process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/medilink_test';
@@ -40,7 +41,6 @@ beforeAll(async () => {
     password: 'password123',
     role: 'patient',
   });
-  patientToken = patientRes.body.data.token;
   const patient = await Patient.findOne({ userId: patientRes.body.data.user._id });
   patientId = patient._id.toString();
 
@@ -54,9 +54,23 @@ beforeAll(async () => {
     regNo: 'ORDER-DR-001',
     price: 300,
   });
-  doctorToken = doctorRes.body.data.token;
+  await User.updateMany(
+    {
+      email: {
+        $in: ['order.patient@test.com', 'order.doctor@test.com'],
+      },
+    },
+    { isEmailVerified: true }
+  );
 
   const doctor = await Doctor.findOne({ userId: doctorRes.body.data.user._id });
+  doctor.isVerified = true;
+  await doctor.save();
+  await Medicine.create([
+    { name: 'Paracetamol', unitPrice: 35, stock: 20, available: true },
+    { name: 'Vitamin D', unitPrice: 120, stock: 10, available: true },
+    { name: 'ORS', unitPrice: 30, stock: 10, available: true },
+  ]);
   const prescription = await Prescription.create({
     createdBy: doctor._id,
     createdFor: patientId,
@@ -66,6 +80,17 @@ beforeAll(async () => {
     ],
   });
   prescriptionId = prescription._id.toString();
+
+  const patientLogin = await request(app).post('/api/auth/login').send({
+    email: 'order.patient@test.com',
+    password: 'password123',
+  });
+  const doctorLogin = await request(app).post('/api/auth/login').send({
+    email: 'order.doctor@test.com',
+    password: 'password123',
+  });
+  patientToken = patientLogin.body.data.token;
+  doctorToken = doctorLogin.body.data.token;
 
   const admin = await User.create({
     name: 'Order Admin',
@@ -100,7 +125,8 @@ describe('POST /api/orders', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.orderNumber).toMatch(/^ORD-/);
     expect(res.body.data.items[0].name).toBe('Paracetamol');
-    expect(res.body.data.total).toBe(25);
+    expect(res.body.data.items[0].availabilityStatus).toBe('available');
+    expect(res.body.data.total).toBe(95);
     orderId = res.body.data._id;
   });
 
@@ -117,6 +143,25 @@ describe('POST /api/orders', () => {
     expect(res.statusCode).toBe(201);
     expect(res.body.data.subtotal).toBe(240);
     expect(res.body.data.total).toBe(220);
+  });
+
+  it('rejects unavailable medicines', async () => {
+    await Medicine.create({
+      name: 'Unavailable Test',
+      unitPrice: 50,
+      stock: 0,
+      available: false,
+    });
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${patientToken}`)
+      .send({
+        items: [{ name: 'Unavailable Test', quantity: 1 }],
+        shippingAddress,
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toMatch(/Only available medicines/);
   });
 
   it('rejects doctor order creation', async () => {

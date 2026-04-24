@@ -12,6 +12,8 @@ export function useMedicineOrder({ profile, user, showToast } = {}) {
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
   const [deliveryMode, setDeliveryMode] = useState("delivery");
+  const [availability, setAvailability] = useState(null);
+  const [address, setAddress] = useState(() => buildInitialAddress(profile, user));
   const [ordered, setOrdered] = useState(false);
   const [orderedAt, setOrderedAt] = useState(null);
 
@@ -24,8 +26,17 @@ export function useMedicineOrder({ profile, user, showToast } = {}) {
         ordersApi.getAll({ limit: 10 }).catch(() => ({ data: [] })),
       ]);
 
-      setPrescription(prescriptionResponse.data?.[0] || null);
+      const activePrescription = prescriptionResponse.data?.[0] || null;
+      setPrescription(activePrescription);
       setOrderHistory(orderResponse.data || []);
+      if (activePrescription?._id) {
+        const previewResponse = await ordersApi
+          .previewPrescription(activePrescription._id)
+          .catch(() => null);
+        setAvailability(previewResponse?.data || null);
+      } else {
+        setAvailability(null);
+      }
     } catch (e) {
       setError(e.message || "Could not load orders");
     } finally {
@@ -37,46 +48,57 @@ export function useMedicineOrder({ profile, user, showToast } = {}) {
     load();
   }, []);
 
-  const medicines = prescription?.medicines || [];
-  const summary = getOrderSummary(medicines, deliveryMode);
+  useEffect(() => {
+    const next = buildInitialAddress(profile, user);
+    setAddress((current) =>
+      Object.fromEntries(
+        Object.entries(next).map(([key, value]) => [key, current[key] || value]),
+      ),
+    );
+  }, [profile, user]);
+
+  const medicines = availability?.items || prescription?.medicines || [];
+  const availableMedicines = availability?.availableItems || medicines;
+  const unavailableMedicines = availability?.unavailableItems || [];
+  const orderableSummary = getOrderSummary(availableMedicines, deliveryMode);
+  const summary = orderableSummary;
   const latestOrder = orderHistory[0] || null;
   const trackedStatus = latestOrder?.status || (ordered ? "pending" : "");
   const currentStep = STATUS_TO_STEP[trackedStatus] || 0;
-
-  const buildShippingAddress = () => {
-    const address = profile?.address || {};
-    return {
-      name: user?.name || "Patient",
-      phone: user?.phone || profile?.emergencyContact?.phone || "0000000000",
-      street: address.street || "Address not provided",
-      city: address.city || "City not provided",
-      state: address.state || "State not provided",
-      country: address.country || "India",
-      pincode: address.pincode || "000000",
-    };
-  };
+  const addressErrors = getAddressErrors(address);
+  const canPlaceOrder =
+    availableMedicines.length > 0 && addressErrors.length === 0 && !placing;
 
   const placeOrder = async () => {
-    if (medicines.length === 0 || placing) return;
+    if (!canPlaceOrder) {
+      showToast?.(
+        availableMedicines.length === 0
+          ? "No prescribed medicines are available to order right now"
+          : "Add a complete delivery address before placing the order",
+        "warning",
+      );
+      return;
+    }
 
     setPlacing(true);
     setError("");
     try {
       const payload = {
         prescriptionId: prescription?._id,
-        items: medicines.map((medicine) => ({
+        items: availableMedicines.map((medicine) => ({
+          medicine: medicine.medicine,
           name: medicine.name,
           dosage: medicine.dosage,
           frequency: medicine.frequency,
           duration: medicine.duration,
           instructions: medicine.instructions,
           quantity: medicine.quantity || 1,
-          unitPrice: 80,
+          unitPrice: medicine.unitPrice || 0,
         })),
-        shippingAddress: buildShippingAddress(),
+        shippingAddress: address,
         paymentMethod: "cod",
-        deliveryFee: summary.delivery + summary.packaging,
-        discount: summary.discount,
+        deliveryFee: orderableSummary.delivery + orderableSummary.packaging,
+        discount: orderableSummary.discount,
         notes: deliveryMode === "delivery" ? "Home delivery" : "Store pickup",
       };
       const response = await ordersApi.create(payload);
@@ -94,19 +116,55 @@ export function useMedicineOrder({ profile, user, showToast } = {}) {
 
   return {
     currentStep,
+    address,
+    addressErrors,
+    availability,
+    availableMedicines,
+    canPlaceOrder,
     deliveryMode,
     error,
     latestOrder,
     loading,
     medicines,
     orderHistory,
+    orderableSummary,
     ordered,
     orderedAt,
     placing,
     prescription,
     summary,
+    unavailableMedicines,
+    setAddress,
     load,
     placeOrder,
     setDeliveryMode,
   };
+}
+
+function buildInitialAddress(profile, user) {
+  const saved = profile?.address || {};
+  return {
+    name: user?.name || "",
+    phone: user?.phone || profile?.emergencyContact?.phone || "",
+    street: saved.street || "",
+    city: saved.city || "",
+    state: saved.state || "",
+    country: saved.country || "India",
+    pincode: saved.pincode || "",
+  };
+}
+
+function getAddressErrors(address) {
+  const required = [
+    ["name", "Recipient name"],
+    ["phone", "Phone"],
+    ["street", "Street address"],
+    ["city", "City"],
+    ["state", "State"],
+    ["country", "Country"],
+    ["pincode", "Pincode"],
+  ];
+  return required
+    .filter(([key]) => !String(address?.[key] || "").trim())
+    .map(([, label]) => label);
 }

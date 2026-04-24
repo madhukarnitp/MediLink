@@ -15,7 +15,9 @@ const { sendSseToUser } = require('../utils/sseHub');
  */
 exports.startConsultation = async (req, res, next) => {
   try {
-    const { doctorId, reason } = req.body;
+    const { doctorId } = req.body;
+    const intake = normalizeIntake(req.body.intake);
+    const reason = buildConsultationReason(req.body.reason, intake);
 
     const patient = await Patient.findOne({ userId: req.user._id }).populate('userId', 'name email');
     if (!patient) return error(res, 'Patient profile not found', 404);
@@ -40,6 +42,7 @@ exports.startConsultation = async (req, res, next) => {
         doctor,
         patient,
         reason: existing.reason || reason,
+        intake: existing.intake || intake,
         reused: true,
       });
 
@@ -55,6 +58,7 @@ exports.startConsultation = async (req, res, next) => {
       patient: patient._id,
       doctor: doctor._id,
       reason,
+      intake,
       status: CONSULTATION_STATUS.PENDING,
       roomId,
     });
@@ -79,6 +83,7 @@ exports.startConsultation = async (req, res, next) => {
       doctor,
       patient,
       reason,
+      intake,
     });
 
     return success(res, populated, 201);
@@ -94,7 +99,40 @@ exports.startConsultation = async (req, res, next) => {
   }
 };
 
-async function notifyDoctorConsultationRequest({ consultation, doctor, patient, reason, reused = false }) {
+function cleanText(value, maxLength) {
+  return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
+}
+
+function normalizeIntake(raw = {}) {
+  const symptoms = Array.isArray(raw.symptoms)
+    ? raw.symptoms
+        .map((item) => cleanText(item, 80))
+        .filter(Boolean)
+        .slice(0, 12)
+    : [];
+  const severity = ['mild', 'moderate', 'severe', 'urgent'].includes(raw.severity)
+    ? raw.severity
+    : '';
+
+  return {
+    chiefComplaint: cleanText(raw.chiefComplaint, 500),
+    symptoms,
+    duration: cleanText(raw.duration, 120),
+    severity,
+    existingConditions: cleanText(raw.existingConditions, 500),
+    currentMedicines: cleanText(raw.currentMedicines, 500),
+    allergies: cleanText(raw.allergies, 300),
+    notes: cleanText(raw.notes, 1000),
+  };
+}
+
+function buildConsultationReason(rawReason, intake) {
+  const complaint = intake?.chiefComplaint;
+  if (complaint) return complaint.slice(0, 300);
+  return cleanText(rawReason, 300) || 'General consultation';
+}
+
+async function notifyDoctorConsultationRequest({ consultation, doctor, patient, reason, intake, reused = false }) {
   const doctorUserId = doctor?.userId?._id;
   if (doctorUserId) {
     const payload = {
@@ -107,6 +145,7 @@ async function notifyDoctorConsultationRequest({ consultation, doctor, patient, 
         id: patient._id,
       },
       reason: reason || 'General consultation',
+      intake: intake || consultation.intake,
       createdAt: consultation.createdAt,
     };
 

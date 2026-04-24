@@ -5,7 +5,7 @@ const Patient = require('../models/Patient');
 const Consultation = require('../models/Consultation');
 const { success, error, paginate } = require('../utils/apiResponse');
 const { sendEmail, emailTemplates } = require('../utils/email');
-const { PRESCRIPTION_STATUS, PAGINATION } = require('../utils/constants');
+const { CONSULTATION_STATUS, PRESCRIPTION_STATUS, PAGINATION } = require('../utils/constants');
 const {
   addPublicVerification,
   isValidPrescriptionVerificationToken,
@@ -127,7 +127,19 @@ exports.createPrescription = async (req, res, next) => {
 
     // Attach prescription to consultation
     if (consultationId) {
-      await Consultation.findByIdAndUpdate(consultationId, { prescription: prescription._id });
+      const linkedConsultation = await Consultation.findById(consultationId);
+      if (linkedConsultation) {
+        linkedConsultation.prescription = prescription._id;
+        if (linkedConsultation.status === CONSULTATION_STATUS.PENDING) {
+          linkedConsultation.status = CONSULTATION_STATUS.COMPLETED;
+          linkedConsultation.startedAt = linkedConsultation.startedAt || new Date();
+          linkedConsultation.endedAt = new Date();
+          linkedConsultation.duration = 0;
+          linkedConsultation.notes =
+            linkedConsultation.notes || 'Prescription issued from patient intake.';
+        }
+        await linkedConsultation.save();
+      }
     }
 
     // Email patient

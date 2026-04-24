@@ -15,10 +15,8 @@ import {
   prescriptionSelection,
 } from "../services/api";
 import {
-  connectSocket,
   disconnectSocket,
   declineVideoCall,
-  EVENTS as SOCKET_EVENTS,
 } from "../services/socket";
 import {
   connectNotificationStream,
@@ -831,28 +829,6 @@ export function AppProvider({ children }) {
       disconnectNotificationStream();
     };
   }, [callActivity.busy, dispatchDoctorPresence, isAuthenticated, navigate, showToast]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !userRef.current) return;
-
-    const token = localStorage.getItem("ml_token");
-    if (!token) return;
-
-    const socket = connectSocket(token);
-    if (!socket) return;
-
-    const onDoctorOnline = (payload = {}) => dispatchDoctorPresence(payload, true);
-    const onDoctorOffline = (payload = {}) =>
-      dispatchDoctorPresence(payload, false);
-
-    socket.on(SOCKET_EVENTS.DOCTOR_ONLINE, onDoctorOnline);
-    socket.on(SOCKET_EVENTS.DOCTOR_OFFLINE, onDoctorOffline);
-
-    return () => {
-      socket.off(SOCKET_EVENTS.DOCTOR_ONLINE, onDoctorOnline);
-      socket.off(SOCKET_EVENTS.DOCTOR_OFFLINE, onDoctorOffline);
-    };
-  }, [dispatchDoctorPresence, isAuthenticated]);
 
   const value = useMemo(
     () => ({
