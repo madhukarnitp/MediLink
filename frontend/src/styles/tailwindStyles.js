@@ -1825,7 +1825,7 @@ export const profileStyles = createStyles({
 export const loginStyles = createStyles({
   ...loginGeneratedStyles,
   container:
-    "!flex min-h-screen !h-auto !w-full !items-start sm:!items-center !justify-center !overflow-y-auto bg-[linear-gradient(135deg,rgba(0,123,255,0.72),rgba(0,123,255,0.62))] px-4 py-6 sm:py-8",
+    "!flex min-h-screen !w-full !items-center !justify-center overflow-y-auto bg-[linear-gradient(135deg,rgba(0,123,255,0.72),rgba(0,123,255,0.62))] px-4 py-6 sm:py-8",
   registerPage:
     "relative min-h-screen w-full overflow-y-auto bg-[linear-gradient(180deg,rgba(248,251,253,0.96),rgba(235,244,255,0.98))] px-4 py-6 text-left sm:py-8",
   background:
