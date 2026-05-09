@@ -231,7 +231,7 @@ function ConsultationRoom({
 
       <div className="ml-auto flex w-fit items-center gap-2 rounded-med border border-med-border bg-med-card p-1.5">
         <button
-          className={`min-h-[38px] min-w-[110px] rounded-med border px-3 text-xs font-extrabold ${
+          className={`min-h-[38px] min-w-[110px] rounded-med border px-3 text-sm font-medium ${
             roomMode === "chat"
               ? "border-[var(--primary-border)] bg-[var(--primary-dim)] text-med-primary"
               : "border-transparent bg-transparent text-med-muted hover:text-med-text"
@@ -243,7 +243,7 @@ function ConsultationRoom({
           Chat
         </button>
         <button
-          className={`min-h-[38px] min-w-[110px] rounded-med border px-3 text-xs font-extrabold ${
+          className={`min-h-[38px] min-w-[110px] rounded-med border px-3 text-sm font-medium ${
             roomMode === "call"
               ? "border-[var(--primary-border)] bg-[var(--primary-dim)] text-med-primary"
               : "border-transparent bg-transparent text-med-muted hover:text-med-text"

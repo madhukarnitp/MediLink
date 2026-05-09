@@ -85,10 +85,10 @@ export default function CurrentConsultationsList({ isCallBusy = false, navigate,
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3 max-sm:items-start">
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-[22px] font-bold text-med-text">
+          <h1 className="text-2xl font-semibold tracking-tight text-med-text md:text-3xl">
             Current Consultations
           </h1>
-          <p className="mt-1 text-[13px] text-med-muted">
+          <p className="mt-1 text-sm leading-relaxed text-med-muted md:text-base">
             Select a consultation room to continue chat or start a video call.
           </p>
         </div>
@@ -103,8 +103,8 @@ export default function CurrentConsultationsList({ isCallBusy = false, navigate,
 
       {currentItems.length === 0 ? (
         <div className="flex flex-col gap-1.5 rounded-med border border-dashed border-med-border bg-med-card px-5 py-10 text-center">
-          <strong className="text-[15px] text-med-text">No current consultations</strong>
-          <span className="text-[13px] text-med-muted">
+          <strong className="text-lg font-semibold text-med-text">No current consultations</strong>
+          <span className="text-sm leading-relaxed text-med-muted">
             Active and pending consultations will appear here with their time.
           </span>
         </div>
@@ -127,16 +127,16 @@ export default function CurrentConsultationsList({ isCallBusy = false, navigate,
               >
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-2.5">
-                    <h2 className="m-0 text-base font-bold text-med-text">{peerName}</h2>
+                    <h2 className="m-0 text-lg font-semibold text-med-text">{peerName}</h2>
                     <span
-                      className={`rounded-full px-2 py-1 text-[11px] font-bold capitalize ${getStatusClassName(
+                      className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${getStatusClassName(
                         consultation.status,
                       )}`}
                     >
                       {consultation.status}
                     </span>
                   </div>
-                  <p className="mb-2 text-[13px] text-med-text">
+                  <p className="mb-2 text-sm leading-relaxed text-med-text">
                     {consultation.reason || "General consultation"}
                   </p>
                   {isDoctor && <IntakeSummary intake={consultation.intake} />}
@@ -187,9 +187,9 @@ function IntakeSummary({ intake }) {
   ].filter(Boolean);
 
   return (
-    <div className="mb-3 rounded-med border border-med-border bg-med-card2 p-3 text-[12px] text-med-muted">
+    <div className="mb-3 rounded-med border border-med-border bg-med-card2 p-3 text-sm leading-relaxed text-med-muted">
       {intake.symptoms?.length ? (
-        <div className="mb-1 font-bold text-med-text">
+        <div className="mb-1 font-medium text-med-text">
           Symptoms: {intake.symptoms.join(", ")}
         </div>
       ) : null}

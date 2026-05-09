@@ -568,7 +568,7 @@ export default function Prescription() {
           )}
           {rx.advice && (
             <div className={styles.instructions}>
-              <div className={styles.instructionsLabel}>Instructions</div>
+              <div className={styles.instructionsLabel}>Doctor instructions</div>
               <div className={`${styles.instructionsText} break-words whitespace-pre-wrap`}>
                 {rx.advice}
               </div>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap');
 @tailwind utilities;
 
 *, *::before, *::after {
@@ -26,17 +26,18 @@
   --text: #132235;
   --muted: #5E6F80;
   --subtle: #A9BBC9;
-  --font-display: 'Syne', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Poppins', 'Inter', sans-serif;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 8px;
   --radius-xl: 8px;
   --control-height: 40px;
-  --control-font-size: 12px;
-  --page-title-size: 22px;
-  --page-subtitle-size: 13px;
-  --section-title-size: 14px;
+  --control-font-size: 14px;
+  --page-title-size: 24px;
+  --page-subtitle-size: 14px;
+  --section-title-size: 20px;
   --card-padding: 16px;
   --main-content-max: 100%;
   --page-gap: 10px;
@@ -51,9 +52,10 @@ body {
     var(--bg);
   color: var(--text);
   font-family: var(--font-body);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 button {
@@ -62,6 +64,7 @@ button {
   border: none;
   outline: none;
   font-size: var(--control-font-size);
+  font-weight: 500;
 }
 
 input, select, textarea {
@@ -76,8 +79,9 @@ input, select, textarea {
     0 8px 20px rgba(19, 34, 53, 0.05);
   color: var(--text);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
+  line-height: 1.45;
   min-height: 42px;
   outline: none;
   transition:

@@ -15,8 +15,10 @@ export default {
         },
       },
       fontFamily: {
-        body: ["var(--font-body)"],
-        display: ["var(--font-display)"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+        heading: ["Poppins", "Inter", "sans-serif"],
+        body: ["Inter", "system-ui", "sans-serif"],
+        display: ["Inter", "system-ui", "sans-serif"],
       },
       borderRadius: {
         med: "8px",

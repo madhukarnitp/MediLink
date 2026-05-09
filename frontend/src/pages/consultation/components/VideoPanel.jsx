@@ -10,7 +10,7 @@ const isMediaControlEnabled = (callState, hasLocalStream) =>
 const cx = (...items) => items.filter(Boolean).join(" ");
 
 const buttonBase =
-  "inline-flex min-h-[38px] min-w-[78px] max-w-[220px] items-center justify-center rounded-med border px-3 text-xs font-extrabold transition disabled:cursor-not-allowed disabled:opacity-45";
+  "inline-flex min-h-[38px] min-w-[78px] max-w-[220px] items-center justify-center rounded-med border px-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-45";
 const neutralButton =
   `${buttonBase} border-med-border bg-med-card2 text-med-text hover:border-slate-300`;
 const primaryButton =
@@ -186,7 +186,7 @@ export function MinimizedCallWidget({
     >
       <div>
         <strong className="block text-[13px]">{peerName}</strong>
-        <span className="mt-0.5 block text-xs font-extrabold tabular-nums text-med-primary">
+        <span className="mt-0.5 block text-xs font-semibold tabular-nums text-med-primary">
           {formatDuration(elapsed)}
         </span>
         <small className="mt-0.5 block text-[11px] text-slate-300">
@@ -196,14 +196,14 @@ export function MinimizedCallWidget({
       </div>
       <div className="flex gap-2">
         <button
-          className="min-h-[34px] rounded-med bg-blue-700 px-3 text-xs font-extrabold text-white"
+          className="min-h-[34px] rounded-med bg-blue-700 px-3 text-xs font-semibold text-white"
           onClick={onRestore}
           type="button"
         >
           Return
         </button>
         <button
-          className="min-h-[34px] rounded-med bg-med-accent px-3 text-xs font-extrabold text-white"
+          className="min-h-[34px] rounded-med bg-med-accent px-3 text-xs font-semibold text-white"
           onClick={onEndCall}
           type="button"
         >
@@ -231,12 +231,12 @@ function VideoPlaceholder({ callState, disabled, initials, peerName }) {
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 p-6 text-center text-med-muted">
-      <div className="flex h-[72px] w-[72px] items-center justify-center rounded-med border-2 border-med-border bg-med-card2 font-display text-[26px] font-bold text-med-text">
+      <div className="flex h-[72px] w-[72px] items-center justify-center rounded-med border-2 border-med-border bg-med-card2 text-[26px] font-semibold text-med-text">
         {initials}
       </div>
       <p
         className={cx(
-          "max-w-[240px] text-xs",
+          "max-w-[240px] text-sm leading-relaxed",
           callState.status === CALL_STATES.ERROR && "text-red-400",
         )}
       >

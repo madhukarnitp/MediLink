@@ -58,7 +58,7 @@ export default function ChatPanel({
 
         {peerTyping && (
           <div className="flex max-w-[75%] flex-col gap-1 self-start">
-            <div className="max-w-[280px] rounded-[18px] rounded-bl-md bg-med-card2 px-4 py-3 text-sm leading-snug text-med-text">
+            <div className="max-w-[280px] rounded-[18px] rounded-bl-md bg-med-card2 px-4 py-3 text-sm leading-relaxed text-med-text">
               <TypingIndicator />
             </div>
           </div>
@@ -189,7 +189,7 @@ function MessageBubble({ message, user, onReaction, reactingTo, setReactingTo })
       <div className="group relative flex items-end gap-2">
         <div
           className={cx(
-            "max-w-[280px] break-words rounded-[18px] px-4 py-3 text-sm leading-snug",
+            "max-w-[280px] break-words rounded-[18px] px-4 py-3 text-sm leading-relaxed",
             isMe
               ? "rounded-br-md bg-med-primary text-white shadow-sm"
               : "rounded-bl-md bg-med-card2 text-med-text",

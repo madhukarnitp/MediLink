@@ -234,6 +234,7 @@ export default function Register() {
         </aside>
 
         <div className={styles.registerPanel}>
+          <img src={logo} alt="MediLink logo" className={styles.registerMobileLogo} />
           <div className={styles.registerPanelTop}>
             <div>
               <span>Registration</span>

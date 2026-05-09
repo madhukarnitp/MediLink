@@ -23,6 +23,8 @@ const createRules = [
   body('medicines.*.dosage').notEmpty().withMessage('Medicine dosage required'),
   body('medicines.*.frequency').notEmpty().withMessage('Medicine frequency required'),
   body('medicines.*.duration').notEmpty().withMessage('Medicine duration required'),
+  body('medicines.*.instructions').optional().trim().isLength({ max: 500 }).withMessage('Medicine instructions cannot exceed 500 characters'),
+  body('advice').optional().trim().isLength({ max: 1000 }).withMessage('Doctor instructions cannot exceed 1000 characters'),
 ];
 
 const updateStatusRules = [

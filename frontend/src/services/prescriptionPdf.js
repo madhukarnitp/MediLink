@@ -265,7 +265,7 @@ export const generatePrescriptionPdf = async ({
     drawTextBlock("Recommended Lab Tests", rx.labTests.join(", "));
   }
   if (rx.advice) {
-    drawTextBlock("Instructions", rx.advice);
+    drawTextBlock("Doctor instructions", rx.advice);
   }
   if (rx.followUpDate) {
     drawTextBlock("Follow-up", formatPrescriptionDate(rx.followUpDate));

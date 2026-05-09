@@ -33,8 +33,8 @@ export default function IncomingCallNotice() {
             <span className="h-3 w-3 rounded-full bg-med-primary" />
           </div>
           <div className="min-w-0">
-            <strong className="block text-[15px]">Incoming video call</strong>
-            <span className="block truncate text-xs text-med-muted">
+            <strong className="block text-lg font-semibold">Incoming video call</strong>
+            <span className="block truncate text-sm text-med-muted">
               {callerName} · {roleLabel}
               {incomingCall.reason ? ` · ${incomingCall.reason}` : ""}
             </span>
@@ -42,14 +42,14 @@ export default function IncomingCallNotice() {
         </div>
         <div className="mt-4 flex flex-wrap justify-end gap-2">
           <button
-            className="min-h-[38px] rounded-med border border-med-border bg-med-card2 px-3 text-xs font-bold text-med-text disabled:cursor-not-allowed disabled:opacity-55"
+            className="min-h-[38px] rounded-med border border-med-border bg-med-card2 px-3 text-sm font-medium text-med-text disabled:cursor-not-allowed disabled:opacity-55"
             onClick={openIncomingCallChat}
             type="button"
           >
             Open chat
           </button>
           <button
-            className="min-h-[38px] rounded-med bg-med-primary px-3 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-55"
+            className="min-h-[38px] rounded-med bg-med-primary px-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-55"
             onClick={acceptIncomingCall}
             disabled={isCallBusy}
             type="button"
@@ -57,7 +57,7 @@ export default function IncomingCallNotice() {
             {isCallBusy ? "Busy" : "Join video"}
           </button>
           <button
-            className="min-h-[38px] rounded-med bg-med-accent px-3 text-xs font-bold text-white"
+            className="min-h-[38px] rounded-med bg-med-accent px-3 text-sm font-medium text-white"
             onClick={dismissIncomingCall}
             type="button"
           >

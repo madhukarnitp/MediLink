@@ -22,10 +22,10 @@ export default function ConsultationHeader({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <h1 className="font-display text-[22px] font-bold text-med-text">
+        <h1 className="text-2xl font-semibold tracking-tight text-med-text md:text-3xl">
           {isActive ? "Live Consultation" : "Consultation Request"}
         </h1>
-        <p className="mt-1 text-[13px] text-med-muted">
+        <p className="mt-1 text-sm leading-relaxed text-med-muted md:text-base">
           {socketReady ? (
             <>
               <span className="text-[10px] text-med-primary">●</span> Connected with{" "}
@@ -40,7 +40,7 @@ export default function ConsultationHeader({
 
       <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
         <button
-          className="min-h-[38px] w-full shrink-0 rounded-med border border-med-border bg-med-card px-3.5 py-2.5 text-xs font-bold text-med-text transition hover:bg-med-card2 disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto"
+          className="min-h-[38px] w-full shrink-0 rounded-med border border-med-border bg-med-card px-3.5 py-2.5 text-sm font-medium text-med-text transition hover:bg-med-card2 disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto"
           onClick={onLeave}
           disabled={leaving || accepting}
           type="button"
@@ -50,7 +50,7 @@ export default function ConsultationHeader({
 
         {canAccept && (
           <button
-            className="min-h-[38px] w-full shrink-0 whitespace-nowrap rounded-med bg-med-primary px-3.5 py-2.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto"
+            className="min-h-[38px] w-full shrink-0 whitespace-nowrap rounded-med bg-med-primary px-3.5 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto"
             onClick={onAccept}
             disabled={accepting || leaving}
             type="button"

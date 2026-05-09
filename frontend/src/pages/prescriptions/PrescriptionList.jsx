@@ -150,7 +150,7 @@ export default function PrescriptionList() {
 
             {rx.advice && (
               <div className={styles.instructions}>
-                <strong>Instructions:</strong> {rx.advice}
+                <strong>Doctor instructions:</strong> {rx.advice}
               </div>
             )}
 

@@ -57,7 +57,7 @@ export default function CreatePrescription() {
   const [search, setSearch] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
   const [medicines, setMedicines] = useState([
-    { name: "", dosage: "", frequency: "", duration: "" },
+    { name: "", dosage: "", frequency: "", duration: "", instructions: "" },
   ]);
   const [instructions, setInstructions] = useState("");
   const [followUp, setFollowUp] = useState(false);
@@ -97,7 +97,7 @@ export default function CreatePrescription() {
   }, [pageParams?.patientId]);
 
   useEffect(() => {
-    if (!intake || diagnosis || instructions) return;
+    if (!intake || diagnosis) return;
     const symptomText = intake.symptoms?.length
       ? ` Symptoms: ${intake.symptoms.join(", ")}.`
       : "";
@@ -109,16 +109,7 @@ export default function CreatePrescription() {
         .join("")
         .trim(),
     );
-    const safetyNotes = [
-      intake.allergies ? `Allergies: ${intake.allergies}` : "",
-      intake.currentMedicines ? `Current medicines: ${intake.currentMedicines}` : "",
-      intake.existingConditions ? `Existing conditions: ${intake.existingConditions}` : "",
-      intake.notes ? `Patient notes: ${intake.notes}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-    if (safetyNotes) setInstructions(safetyNotes);
-  }, [diagnosis, instructions, intake]);
+  }, [diagnosis, intake]);
 
   const filtered = patients.filter((patient) =>
     getPatientSearchText(patient).includes(search.trim().toLowerCase()),
@@ -127,7 +118,7 @@ export default function CreatePrescription() {
   const addMed = () =>
     setMedicines((m) => [
       ...m,
-      { name: "", dosage: "", frequency: "", duration: "" },
+      { name: "", dosage: "", frequency: "", duration: "", instructions: "" },
     ]);
   const removeMed = (i) => setMedicines((m) => m.filter((_, j) => j !== i));
   const updateMed = (i, k, v) =>
@@ -142,12 +133,19 @@ export default function CreatePrescription() {
     if (!validStep2 || !selectedPatient) return;
     setSubmitting(true);
     try {
+      const prescriptionMedicines = medicines
+        .filter((m) => m.name)
+        .map((medicine) => ({
+          ...medicine,
+          name: medicine.name.trim(),
+          instructions: medicine.instructions?.trim() || undefined,
+        }));
       const payload = {
         patientId: getPatientId(selectedPatient),
         consultationId: pageParams?.consultationId || undefined,
         diagnosis: diagnosis.trim(),
-        medicines: medicines.filter((m) => m.name),
-        advice: instructions || undefined,
+        medicines: prescriptionMedicines,
+        advice: instructions.trim() || undefined,
         followUpDate: followUp && followUpDate ? followUpDate : undefined,
       };
       await rxApi.create(payload);
@@ -165,7 +163,7 @@ export default function CreatePrescription() {
       <PageHeader
         eyebrow="Doctor workflow"
         title="Create Prescription"
-        subtitle="Select patient, review complaint, add diagnosis, check safety notes, and issue."
+        subtitle="Select patient, review complaint, add diagnosis, write doctor instructions, and issue."
         actions={
           <Button variant="outline" onClick={() => navigate(PAGES.CONSULTATION_LIST)}>
             Open consultation records
@@ -253,7 +251,7 @@ export default function CreatePrescription() {
         <FormSection
           eyebrow="Medical details"
           title="Prescription Details"
-          subtitle="Review the complaint, add diagnosis, medicines, and safety instructions."
+          subtitle="Review patient intake separately, then add diagnosis, medicines, and doctor instructions."
           complete={Boolean(validStep2)}
         >
           <div className={styles.stepContent}>
@@ -314,6 +312,13 @@ export default function CreatePrescription() {
                     value={med.duration}
                     onChange={(e) => updateMed(i, "duration", e.target.value)}
                   />
+                  <input
+                    className={styles.medInstructionInput}
+                    type="text"
+                    placeholder="Medicine instructions (e.g. after food)"
+                    value={med.instructions}
+                    onChange={(e) => updateMed(i, "instructions", e.target.value)}
+                  />
                   {medicines.length > 1 && (
                     <button
                       className={styles.removeBtn}
@@ -327,12 +332,12 @@ export default function CreatePrescription() {
               ))}
             </div>
             <div className={styles.formGroup}>
-              <label>Instructions</label>
+              <label>Doctor instructions</label>
               <textarea
                 value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
-                placeholder="Special instructions…"
-                rows="2"
+                placeholder="Add doctor advice, e.g. sleep well, drink fluids, avoid heavy meals, return if symptoms worsen..."
+                rows="3"
               />
             </div>
             <div className={styles.followUpBox}>
@@ -373,7 +378,7 @@ export default function CreatePrescription() {
         <FormSection
           eyebrow="Safety check"
           title="Review and Issue"
-          subtitle="Confirm patient, diagnosis, medicine instructions, and safety notes before issuing."
+          subtitle="Confirm patient, diagnosis, medicine instructions, and doctor advice before issuing."
           complete={Boolean(validStep2 && selectedPatient)}
         >
           <div className={styles.stepContent}>
@@ -399,12 +404,17 @@ export default function CreatePrescription() {
                       <div className={styles.muted}>
                         {m.dosage} · {m.frequency} · {m.duration}
                       </div>
+                      {m.instructions ? (
+                        <div className={`${styles.muted} break-words`}>
+                          Instructions: {m.instructions}
+                        </div>
+                      ) : null}
                     </div>
                   ))}
               </div>
               {instructions && (
                 <div className={styles.reviewSection}>
-                  <h3>Instructions</h3>
+                  <h3>Doctor instructions</h3>
                   <p className="break-words">{instructions}</p>
                 </div>
               )}
@@ -473,7 +483,7 @@ function IntakePanel({ intake }) {
 
   return (
     <div className="rounded-med border border-[var(--primary-border)] bg-[var(--primary-dim)] p-3">
-      <div className="text-[12px] font-black uppercase tracking-[0.04em] text-[var(--primary)]">
+      <div className="text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--primary)]">
         Patient Intake
       </div>
       <div className="mt-2 grid min-w-0 gap-2 sm:grid-cols-2">
