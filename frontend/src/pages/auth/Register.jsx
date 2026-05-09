@@ -156,9 +156,6 @@ export default function Register() {
             ? "Account created. Verify your email first. Admin approval is required after verification."
             : "Account created. Verify your email to activate login.",
         );
-        try {
-          await auth.requestVerification(payload.email);
-        } catch {}
       } else {
         await login(payload.email, password);
       }

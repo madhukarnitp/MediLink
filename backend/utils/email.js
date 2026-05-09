@@ -1,53 +1,25 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const parseBool = (value) => String(value || '').toLowerCase() === 'true';
 
-const getTimeout = (name, fallback) => {
-  const value = parseInt(process.env[name], 10);
-  return Number.isFinite(value) && value > 0 ? value : fallback;
-};
-
-const getEmailConfig = () => {
-  const port = parseInt(process.env.EMAIL_PORT, 10) || 465;
-  return {
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port,
-    secure: process.env.EMAIL_SECURE === undefined
-      ? port === 465
-      : parseBool(process.env.EMAIL_SECURE),
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-    from: process.env.EMAIL_FROM || `"Medilink" <${process.env.EMAIL_USER}>`,
-    required: parseBool(process.env.EMAIL_REQUIRED),
-    family: 4,
-    connectionTimeout: getTimeout('EMAIL_CONNECTION_TIMEOUT_MS', 8000),
-    greetingTimeout: getTimeout('EMAIL_GREETING_TIMEOUT_MS', 8000),
-    socketTimeout: getTimeout('EMAIL_SOCKET_TIMEOUT_MS', 10000),
-  };
-};
-
-const getSafeEmailError = (err) => ({
-  code: err?.code,
-  command: err?.command,
-  responseCode: err?.responseCode,
-  message: err?.message,
+const getEmailConfig = () => ({
+  apiKey: process.env.RESEND_API_KEY,
+  from: process.env.EMAIL_FROM || 'MediLink <onboarding@resend.dev>',
+  required: parseBool(process.env.EMAIL_REQUIRED),
 });
 
-const createTransporter = () => {
-  const config = getEmailConfig();
-  return nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
-    family: config.family,
-    auth: {
-      user: config.user,
-      pass: config.pass,
-    },
-    connectionTimeout: config.connectionTimeout,
-    greetingTimeout: config.greetingTimeout,
-    socketTimeout: config.socketTimeout,
-  });
+const getSafeEmailError = (err) => ({
+  name: err?.name,
+  message: err?.message,
+  statusCode: err?.statusCode,
+});
+
+const normalizeResendError = (error) => {
+  if (!error) return null;
+  const err = new Error(error.message || 'Resend email delivery failed');
+  err.name = error.name || 'ResendError';
+  err.statusCode = error.statusCode || error.status;
+  return err;
 };
 
 /**
@@ -60,7 +32,7 @@ const sendEmail = async (options) => {
   }
 
   const config = getEmailConfig();
-  const missing = ['host', 'user', 'pass'].filter((key) => !config[key]);
+  const missing = ['apiKey', 'from'].filter((key) => !config[key]);
   if (missing.length) {
     const message = `Email is not configured; missing ${missing.join(', ')}`;
     if (config.required || process.env.NODE_ENV === 'production') {
@@ -70,19 +42,27 @@ const sendEmail = async (options) => {
     return { messageId: `email-skipped-${Date.now()}`, accepted: [], skipped: true };
   }
 
-  const transporter = createTransporter();
-  const mailOptions = {
-    from: config.from,
-    to: options.to,
-    subject: options.subject,
-    html: options.html,
-    text: options.text,
-  };
+  const resend = new Resend(config.apiKey);
 
   try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`[email] Message delivered to ${options.to}; id=${info.messageId}`);
-    return info;
+    const result = await resend.emails.send({
+      from: config.from,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+    });
+
+    const providerError = normalizeResendError(result?.error);
+    if (providerError) throw providerError;
+
+    console.log('[email] Message sent', {
+      to: options.to,
+      subject: options.subject,
+      id: result?.data?.id,
+    });
+
+    return result;
   } catch (err) {
     console.error('[email] Message delivery failed', {
       to: options.to,
