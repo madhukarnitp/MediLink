@@ -10,6 +10,9 @@
     "backend": "npm run dev --prefix backend",
     "realtime": "npm run dev --prefix realtime-server",
     "frontend": "npm run dev --prefix frontend",
+    "android": "npm run android --prefix android-app",
+    "android:start": "npm run start --prefix android-app",
+    "install-android": "npm install --prefix android-app",
     "start": "npm start --prefix backend",
     "start:realtime": "npm start --prefix realtime-server",
     "build": "npm run build --prefix backend || echo 'Backend build skipped'"

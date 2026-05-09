@@ -354,7 +354,6 @@ export default function TopNavbar() {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
-          className="border border-2"
         />
         {query && (
           <button

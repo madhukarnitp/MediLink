@@ -74,6 +74,12 @@ const DOCTOR_NAV_ITEMS = [
     icon: FileIcon,
   },
   {
+    page: PAGES.CONSULTATION_LIST,
+    label: "Past Consultations",
+    mobileLabel: "History",
+    icon: FileIcon,
+  },
+  {
     page: PAGES.CONSULTATION,
     label: "Consultations",
     mobileLabel: "Chat",

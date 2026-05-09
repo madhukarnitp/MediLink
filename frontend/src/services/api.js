@@ -212,11 +212,14 @@ async function req(path, options = {}) {
     (cachePolicy === "persist" ? PERSISTED_CACHE_TTL_MS : GET_CACHE_TTL_MS);
   const method = (requestOptions.method || "GET").toUpperCase();
   const isGet = method === "GET";
+  const skipCache = cachePolicy === "none";
   const cacheScope = requestOptions.skipAuth ? "public" : getToken() || "anon";
   const cacheKey = `${cacheScope}:${path}`;
   const shouldPersist = cachePolicy === "persist";
 
   if (isGet) {
+    if (skipCache) return send(path, requestOptions);
+
     const cached = getCache.get(cacheKey);
     if (cached?.data && cached.expiresAt > Date.now()) return cached.data;
     if (cached?.promise) return cached.promise;
@@ -510,7 +513,7 @@ export const admin = {
       : req(`/admin/users/${id}`, { method: "DELETE" }),
   getOrders: (p = {}) =>
     req(`/admin/orders?${new URLSearchParams(p)}`, {
-      cachePolicy: "persist",
+      cachePolicy: "none",
     }),
   updateOrderStatus: (id, statusOrPayload) =>
     req(`/admin/orders/${id}/status`, {
@@ -545,8 +548,8 @@ export const orders = {
   previewPrescription: (prescriptionId) =>
     req(`/orders/prescriptions/${prescriptionId}/availability`),
   getAll: (p = {}) =>
-    req(`/orders?${new URLSearchParams(p)}`, { cachePolicy: "persist" }),
-  getById: (id) => req(`/orders/${id}`, { cachePolicy: "persist" }),
+    req(`/orders?${new URLSearchParams(p)}`, { cachePolicy: "none" }),
+  getById: (id) => req(`/orders/${id}`, { cachePolicy: "none" }),
   cancel: (id, reason) =>
     req(`/orders/${id}/cancel`, {
       method: "PUT",

@@ -111,7 +111,7 @@ export default function AdminShell({ children }) {
   };
 
   return (
-    <div className={styles.shell}>
+    <div className={`${styles.shell} admin-dark`}>
       <TopNavbar />
       <div className={styles.workspace}>
         <aside

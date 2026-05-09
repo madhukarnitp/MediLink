@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "MediLink",
+    "slug": "medilink-android",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#F8FAFC"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.medilink.mobile",
+      "permissions": [
+        "INTERNET"
+      ]
+    },
+    "extra": {
+      "apiUrl": "http://10.0.2.2:5001/api",
+      "realtimeUrl": "http://10.0.2.2:5002"
+    }
+  }
+}

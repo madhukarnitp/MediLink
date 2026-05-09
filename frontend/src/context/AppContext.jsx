@@ -109,6 +109,9 @@ const getPathForPage = (page, params = {}) => {
   if (page === PAGES.PATIENT_REPORTS && params.patientId) {
     return `/doctor/patients/${encodeURIComponent(params.patientId)}/reports`;
   }
+  if (page === PAGES.DOCTOR_PATIENTS && params.patientId) {
+    return `/doctor/patients/${encodeURIComponent(params.patientId)}`;
+  }
   if (page === PAGES.CREATE_PRESCRIPTION && params.patientId) {
     const query = new URLSearchParams({
       patientId: String(params.patientId),
@@ -143,6 +146,7 @@ const getDeepLinkTarget = () => {
 
   if (parts.length === 0) return null;
   if (parts[0] === "login") return null;
+  if (parts[0] === "register") return null;
   if (parts[0] === "verify-email") return null;
 
   const query = new URLSearchParams(hashQuery || window.location.search);
@@ -275,6 +279,7 @@ export function AppProvider({ children }) {
   const routerNavigate = useRouterNavigate();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activePage, setActivePage] = useState(null);
@@ -338,6 +343,7 @@ export function AppProvider({ children }) {
         ) {
           applyNavigationTarget(target.page, target.params || {});
         }
+        setProfileLoaded(true);
         setLoading(false);
         return;
       }
@@ -347,6 +353,7 @@ export function AppProvider({ children }) {
         const target = pendingDeepLinkRef.current;
         setUser(saved);
         setIsAuthenticated(true);
+        setProfileLoaded(false);
         applyNavigationTarget(
           target?.page || getHomePage(saved.role),
           target?.params || {},
@@ -359,6 +366,7 @@ export function AppProvider({ children }) {
         const target = pendingDeepLinkRef.current;
         setUser(res.data.user);
         setProfile(res.data.profile);
+        setProfileLoaded(true);
         localStorage.setItem("ml_user", JSON.stringify(res.data.user));
         setIsAuthenticated(true);
         if (!saved || target) {
@@ -372,6 +380,8 @@ export function AppProvider({ children }) {
         const target = pendingDeepLinkRef.current;
         setIsAuthenticated(false);
         setUser(null);
+        setProfile(null);
+        setProfileLoaded(true);
         clearTokens();
         if (
           target?.page === PAGES.PRESCRIPTION ||
@@ -549,23 +559,28 @@ export function AppProvider({ children }) {
     }
     if (nextProfile !== undefined) {
       setProfile(nextProfile);
+      setProfileLoaded(true);
     }
   }, []);
 
   const login = useCallback(
     async (email, password) => {
       const data = await authApi.login(email, password);
+      const me = await authApi.getMe();
       const target = pendingDeepLinkRef.current;
-      const nextPage = target?.page || getHomePage(data.user.role);
+      const sessionUser = me.data?.user || data.user;
+      const nextPage = target?.page || getHomePage(sessionUser.role);
       const nextParams = target?.params || {};
-      setUser(data.user);
+      setUser(sessionUser);
+      setProfile(me.data?.profile || null);
+      setProfileLoaded(true);
       setIsAuthenticated(true);
       applyNavigationTarget(nextPage, nextParams);
       routerNavigate("/", { replace: true });
       pendingDeepLinkRef.current = null;
       loadNotifications();
-      showToast(`Welcome back, ${data.user.name.split(" ")[0]}!`);
-      return data;
+      showToast(`Welcome back, ${sessionUser.name.split(" ")[0]}!`);
+      return { ...data, user: sessionUser, profile: me.data?.profile || null };
     },
     [applyNavigationTarget, loadNotifications, routerNavigate, showToast],
   );
@@ -578,6 +593,7 @@ export function AppProvider({ children }) {
     prescriptionSelection.clear();
     setUser(null);
     setProfile(null);
+    setProfileLoaded(true);
     setIsAuthenticated(false);
     setActivePage(null);
     setPageParams({});
@@ -834,6 +850,7 @@ export function AppProvider({ children }) {
     () => ({
       user,
       profile,
+      profileLoaded,
       isAuthenticated,
       loading,
       activePage,
@@ -889,6 +906,7 @@ export function AppProvider({ children }) {
       openIncomingCallChat,
       pageParams,
       profile,
+      profileLoaded,
       requestNotificationPermission,
       registerCallGuard,
       selectedConsultationId,

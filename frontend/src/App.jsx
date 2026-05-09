@@ -9,32 +9,37 @@ import IncomingCallNotice from "./components/layout/IncomingCallNotice";
 import Toast from "./components/ui/Toast";
 import { FullPageSkeleton, PageSkeleton } from "./components/ui/UI";
 import { startKeepAlive, stopKeepAlive } from "./services/keepAlive";
+import {
+  getMissingProfileFields,
+  needsProfileCompletion,
+} from "./utils/profileCompletion";
 import "./styles/globals.css";
 
-const Login = lazy(() => import("./components/pages/Login"));
-const Dashboard = lazy(() => import("./components/pages/Dashboard"));
-const DoctorDashboard = lazy(() => import("./components/pages/DoctorDashboard"));
-const DoctorPatients = lazy(() => import("./components/pages/DoctorPatients"));
-const PatientVitals = lazy(() => import("./components/pages/PatientVitals"));
-const PatientReports = lazy(() => import("./components/pages/PatientReports"));
-const DoctorList = lazy(() => import("./components/pages/DoctorList"));
-const Consultation = lazy(() => import("./components/pages/Consultation"));
-const Appointments = lazy(() => import("./components/pages/Appointments"));
-const Prescription = lazy(() => import("./components/pages/Prescription"));
-const PrescriptionList = lazy(() => import("./components/pages/PrescriptionList"));
-const ConsultationList = lazy(() => import("./components/pages/ConsultationList"));
-const CreatePrescription = lazy(() => import("./components/pages/CreatePrescription"));
-const DoctorPrescriptions = lazy(() => import("./components/pages/DoctorPrescriptions"));
-const HealthRecords = lazy(() => import("./components/pages/HealthRecords"));
-const Orders = lazy(() => import("./components/pages/Orders"));
-const SOSPage = lazy(() => import("./components/pages/SOSPage"));
-const AdminDashboard = lazy(() => import("./components/pages/AdminDashboard"));
-const AdminUsers = lazy(() => import("./components/pages/AdminUsers"));
-const AdminDoctors = lazy(() => import("./components/pages/AdminDoctors"));
-const AdminOrders = lazy(() => import("./components/pages/AdminOrders"));
-const AdminMedicines = lazy(() => import("./components/pages/AdminMedicines"));
-const Profile = lazy(() => import("./components/pages/Profile"));
-const ErrorPage = lazy(() => import("./components/pages/ErrorPage"));
+const Login = lazy(() => import("./pages/auth/Login"));
+const Register = lazy(() => import("./pages/auth/Register"));
+const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
+const DoctorDashboard = lazy(() => import("./pages/doctor/DoctorDashboard"));
+const DoctorPatients = lazy(() => import("./pages/doctor/DoctorPatients"));
+const PatientVitals = lazy(() => import("./pages/health-records/PatientVitals"));
+const PatientReports = lazy(() => import("./pages/health-records/PatientReports"));
+const DoctorList = lazy(() => import("./pages/doctor/DoctorList"));
+const Consultation = lazy(() => import("./pages/consultation/Consultation"));
+const Appointments = lazy(() => import("./pages/appointments/Appointments"));
+const Prescription = lazy(() => import("./pages/prescriptions/Prescription"));
+const PrescriptionList = lazy(() => import("./pages/prescriptions/PrescriptionList"));
+const ConsultationList = lazy(() => import("./pages/consultation/ConsultationList"));
+const CreatePrescription = lazy(() => import("./pages/prescriptions/CreatePrescription"));
+const DoctorPrescriptions = lazy(() => import("./pages/prescriptions/DoctorPrescriptions"));
+const HealthRecords = lazy(() => import("./pages/health-records/HealthRecords"));
+const Orders = lazy(() => import("./pages/orders/Orders"));
+const SOSPage = lazy(() => import("./pages/sos/SOSPage"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminDoctors = lazy(() => import("./pages/admin/AdminDoctors"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminMedicines = lazy(() => import("./pages/admin/AdminMedicines"));
+const Profile = lazy(() => import("./pages/profile/Profile"));
+const ErrorPage = lazy(() => import("./pages/error/ErrorPage"));
 const ChatbotWidget = lazy(() => import("./components/ui/ChatbotWidget"));
 
 const queryClient = new QueryClient({
@@ -119,6 +124,8 @@ function AppContent() {
     isAuthenticated,
     loading,
     pageParams,
+    profile,
+    profileLoaded,
     selectedPrescriptionId,
     toasts,
     user,
@@ -133,8 +140,24 @@ function AppContent() {
     pageParams?.publicDetail;
   const rawRoute =
     location.hash.replace(/^#\/?/, "") || location.pathname.replace(/^\/+/, "");
+  const isLoginUrl = rawRoute === "" || /^login(?:[/?#]|$)/i.test(rawRoute);
+  const isRegisterUrl = /^register(?:[/?#]|$)/i.test(rawRoute);
+  const isEmailVerificationUrl = /^verify-email\/[^/?#]+/i.test(rawRoute);
   const isPublicPrescriptionUrl = /^prescription\/[^/?#]+/i.test(rawRoute);
-  const isPublicError = !isAuthenticated && activePage === PAGES.NOT_FOUND;
+  const isPublicError =
+    !isAuthenticated &&
+    activePage === PAGES.NOT_FOUND &&
+    !isLoginUrl &&
+    !isRegisterUrl &&
+    !isEmailVerificationUrl;
+  const missingProfileFields = profileLoaded
+    ? getMissingProfileFields(user, profile)
+    : [];
+  const mustCompleteProfile =
+    isAuthenticated &&
+    profileLoaded &&
+    needsProfileCompletion(user, profile) &&
+    user?.role !== "admin";
 
   if (
     isVerificationPage ||
@@ -156,7 +179,13 @@ function AppContent() {
     return (
       <>
         <Suspense fallback={loadingFallback}>
-          {isPublicError ? <ErrorPage /> : <Login />}
+          {isRegisterUrl || isEmailVerificationUrl ? (
+            <Register />
+          ) : isPublicError ? (
+            <ErrorPage />
+          ) : (
+            <Login />
+          )}
         </Suspense>
         <Toast onDismiss={dismissToast} toasts={toasts} />
       </>
@@ -173,12 +202,21 @@ function AppContent() {
     <Shell>
       <IncomingCallNotice />
       <Suspense fallback={loadingFallback}>
-        <PageRouter />
+        {mustCompleteProfile ? (
+          <Profile
+            missingFields={missingProfileFields}
+            requireCompletion
+          />
+        ) : (
+          <PageRouter />
+        )}
       </Suspense>
       <Toast onDismiss={dismissToast} toasts={toasts} />
-      <Suspense fallback={null}>
-        <ChatbotWidget />
-      </Suspense>
+      {!mustCompleteProfile && (
+        <Suspense fallback={null}>
+          <ChatbotWidget />
+        </Suspense>
+      )}
     </Shell>
   );
 }

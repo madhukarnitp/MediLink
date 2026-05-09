@@ -255,64 +255,78 @@ MediLink/
 |   |   |   |   |-- IncomingCallNotice.jsx
 |   |   |   |   |-- Sidebar.jsx
 |   |   |   |   `-- TopNavbar.jsx
-|   |   |   |-- pages/
-|   |   |   |   |-- consultation/
-|   |   |   |   |   |-- callMachine.js
-|   |   |   |   |   |-- ChatPanel.jsx
-|   |   |   |   |   |-- ConsultationHeader.jsx
-|   |   |   |   |   |-- consultationUtils.js
-|   |   |   |   |   |-- CurrentConsultationsList.jsx
-|   |   |   |   |   |-- IncomingCallBanner.jsx
-|   |   |   |   |   |-- RatingModal.jsx
-|   |   |   |   |   |-- useConsultationSession.js
-|   |   |   |   |   `-- VideoPanel.jsx
-|   |   |   |   |-- orders/
-|   |   |   |   |   |-- FulfillmentSelector.jsx
-|   |   |   |   |   |-- orderUtils.js
-|   |   |   |   |   |-- OrdersHero.jsx
-|   |   |   |   |   |-- OrderSummaryCard.jsx
-|   |   |   |   |   |-- OrderTracker.jsx
-|   |   |   |   |   |-- PrescriptionItems.jsx
-|   |   |   |   |   |-- PromiseGrid.jsx
-|   |   |   |   |   `-- useMedicineOrder.js
-|   |   |   |   |-- sos/
-|   |   |   |   |   |-- SOSHero.jsx
-|   |   |   |   |   |-- SOSInfoPanel.jsx
-|   |   |   |   |   |-- sosUtils.js
-|   |   |   |   |   `-- useEmergencySOS.js
-|   |   |   |   |-- AdminDashboard.jsx
-|   |   |   |   |-- AdminDashboard_old.jsx
-|   |   |   |   |-- AdminDoctors.jsx
-|   |   |   |   |-- AdminMedicines.jsx
-|   |   |   |   |-- AdminOrders.jsx
-|   |   |   |   |-- AdminUsers.jsx
-|   |   |   |   |-- Appointments.jsx
-|   |   |   |   |-- Consultation.jsx
-|   |   |   |   |-- ConsultationList.jsx
-|   |   |   |   |-- CreatePrescription.jsx
-|   |   |   |   |-- Dashboard.jsx
-|   |   |   |   |-- DoctorDashboard.jsx
-|   |   |   |   |-- DoctorList.jsx
-|   |   |   |   |-- DoctorPatients.jsx
-|   |   |   |   |-- DoctorPrescriptions.jsx
-|   |   |   |   |-- ErrorPage.jsx
-|   |   |   |   |-- HealthRecords.jsx
-|   |   |   |   |-- Login.jsx
-|   |   |   |   |-- Orders.jsx
-|   |   |   |   |-- PatientReports.jsx
-|   |   |   |   |-- PatientVitals.jsx
-|   |   |   |   |-- Prescription.jsx
-|   |   |   |   |-- PrescriptionList.jsx
-|   |   |   |   |-- Profile.jsx
-|   |   |   |   `-- SOSPage.jsx
 |   |   |   `-- ui/
 |   |   |       |-- ChatbotWidget.jsx
 |   |   |       |-- Toast.jsx
 |   |   |       `-- UI.jsx
 |   |   |-- context/
 |   |   |   `-- AppContext.jsx
+|   |   |-- pages/
+|   |   |   |-- admin/
+|   |   |   |   |-- AdminDashboard.jsx
+|   |   |   |   |-- AdminDoctors.jsx
+|   |   |   |   |-- AdminMedicines.jsx
+|   |   |   |   |-- AdminOrders.jsx
+|   |   |   |   |-- AdminUsers.jsx
+|   |   |   |   `-- legacy/
+|   |   |   |       `-- AdminDashboardOld.jsx
+|   |   |   |-- appointments/
+|   |   |   |   `-- Appointments.jsx
+|   |   |   |-- auth/
+|   |   |   |   `-- Login.jsx
+|   |   |   |-- consultation/
+|   |   |   |   |-- Consultation.jsx
+|   |   |   |   |-- ConsultationList.jsx
+|   |   |   |   `-- components/
+|   |   |   |       |-- callMachine.js
+|   |   |   |       |-- ChatPanel.jsx
+|   |   |   |       |-- ConsultationHeader.jsx
+|   |   |   |       |-- consultationUtils.js
+|   |   |   |       |-- CurrentConsultationsList.jsx
+|   |   |   |       |-- IncomingCallBanner.jsx
+|   |   |   |       |-- RatingModal.jsx
+|   |   |   |       |-- useConsultationSession.js
+|   |   |   |       `-- VideoPanel.jsx
+|   |   |   |-- dashboard/
+|   |   |   |   `-- Dashboard.jsx
+|   |   |   |-- doctor/
+|   |   |   |   |-- DoctorDashboard.jsx
+|   |   |   |   |-- DoctorList.jsx
+|   |   |   |   `-- DoctorPatients.jsx
+|   |   |   |-- error/
+|   |   |   |   `-- ErrorPage.jsx
+|   |   |   |-- health-records/
+|   |   |   |   |-- HealthRecords.jsx
+|   |   |   |   |-- PatientReports.jsx
+|   |   |   |   `-- PatientVitals.jsx
+|   |   |   |-- orders/
+|   |   |   |   |-- Orders.jsx
+|   |   |   |   `-- components/
+|   |   |   |       |-- FulfillmentSelector.jsx
+|   |   |   |       |-- orderUtils.js
+|   |   |   |       |-- OrdersHero.jsx
+|   |   |   |       |-- OrderSummaryCard.jsx
+|   |   |   |       |-- OrderTracker.jsx
+|   |   |   |       |-- PrescriptionItems.jsx
+|   |   |   |       |-- PromiseGrid.jsx
+|   |   |   |       `-- useMedicineOrder.js
+|   |   |   |-- prescriptions/
+|   |   |   |   |-- CreatePrescription.jsx
+|   |   |   |   |-- DoctorPrescriptions.jsx
+|   |   |   |   |-- Prescription.jsx
+|   |   |   |   `-- PrescriptionList.jsx
+|   |   |   |-- profile/
+|   |   |   |   `-- Profile.jsx
+|   |   |   `-- sos/
+|   |   |       |-- SOSPage.jsx
+|   |   |       `-- components/
+|   |   |           |-- SOSHero.jsx
+|   |   |           |-- SOSInfoPanel.jsx
+|   |   |           |-- sosUtils.js
+|   |   |           `-- useEmergencySOS.js
 |   |   |-- services/
 |   |   |   |-- api.js
+|   |   |   |-- keepAlive.js
 |   |   |   |-- notificationStream.js
 |   |   |   |-- prescriptionPdf.js
 |   |   |   |-- socket.js
@@ -330,8 +344,7 @@ MediLink/
 |   |-- postcss.config.js
 |   |-- README.md
 |   |-- tailwind.config.js
-|   `-- vite.config.js
-|-- realtime-server/
+|   `-- vite.config.js|-- realtime-server/
 |   |-- config/
 |   |   `-- database.js
 |   |-- models/
@@ -707,30 +720,40 @@ The backend uses this bridge to send realtime notifications/events when configur
 
 ## Frontend Overview
 
-The frontend is a React SPA. It uses app state from `src/context/AppContext.jsx`, REST helpers from `src/services/api.js`, realtime helpers from `src/services/socket.js`, and shared Tailwind utility style maps from `src/styles/tailwindStyles.js`.
+The frontend is a React SPA. It uses app state from `src/context/AppContext.jsx`, REST helpers from `src/services/api.js`, realtime helpers from `src/services/socket.js`, route screens from `src/pages/`, reusable shell/UI components from `src/components/`, and shared Tailwind utility style maps from `src/styles/tailwindStyles.js`.
 
-> Frontend comment: Layout code lives separately from page code. Start with `components/layout/` for navigation or shell changes, and start with `pages/` for screen-specific changes.
+> Frontend comment: Layout code lives separately from route screen code. Start with `components/layout/` for navigation or shell changes, `components/ui/` for shared design-system primitives, and `pages/<domain>/` for screen-specific changes.
+
+Frontend organization rules:
+
+- `src/pages/<domain>/`: route-level screens grouped by product domain.
+- `src/pages/<domain>/components/`: components and hooks used only by that domain.
+- `src/components/layout/`: app shells, navigation, top bars, and global notices.
+- `src/components/ui/`: shared UI primitives such as buttons, modals, filters, empty states, status pills, and skeletons.
+- `src/context/`: app-wide state, routing state, auth, notifications, and call guards.
+- `src/services/`: API, realtime socket, notifications, sounds, PDF generation, and keep-alive helpers.
+- `src/styles/`: generated and curated Tailwind utility maps plus global theme CSS.
 
 Important frontend pages:
 
 | Page | File |
 | --- | --- |
-| Login/Register | `frontend/src/components/pages/Login.jsx` |
-| Patient dashboard | `frontend/src/components/pages/Dashboard.jsx` |
-| Doctor discovery | `frontend/src/components/pages/DoctorList.jsx` |
-| Consultation room | `frontend/src/components/pages/Consultation.jsx` |
-| Consultation history | `frontend/src/components/pages/ConsultationList.jsx` |
-| Appointments | `frontend/src/components/pages/Appointments.jsx` |
-| Create prescription | `frontend/src/components/pages/CreatePrescription.jsx` |
-| Prescriptions | `frontend/src/components/pages/PrescriptionList.jsx`, `Prescription.jsx` |
-| Orders | `frontend/src/components/pages/Orders.jsx` |
-| Health records | `frontend/src/components/pages/HealthRecords.jsx` |
-| Vitals | `frontend/src/components/pages/PatientVitals.jsx` |
-| Reports | `frontend/src/components/pages/PatientReports.jsx` |
-| Profile | `frontend/src/components/pages/Profile.jsx` |
-| SOS | `frontend/src/components/pages/SOSPage.jsx` |
-| Admin dashboard | `frontend/src/components/pages/AdminDashboard.jsx` |
-| Admin users/doctors/orders/medicines | `AdminUsers.jsx`, `AdminDoctors.jsx`, `AdminOrders.jsx`, `AdminMedicines.jsx` |
+| Login/Register | `frontend/src/pages/auth/Login.jsx` |
+| Patient dashboard | `frontend/src/pages/dashboard/Dashboard.jsx` |
+| Doctor discovery | `frontend/src/pages/doctor/DoctorList.jsx` |
+| Consultation room | `frontend/src/pages/consultation/Consultation.jsx` |
+| Consultation history | `frontend/src/pages/consultation/ConsultationList.jsx` |
+| Appointments | `frontend/src/pages/appointments/Appointments.jsx` |
+| Create prescription | `frontend/src/pages/prescriptions/CreatePrescription.jsx` |
+| Prescriptions | `frontend/src/pages/prescriptions/PrescriptionList.jsx`, `Prescription.jsx` |
+| Orders | `frontend/src/pages/orders/Orders.jsx` |
+| Health records | `frontend/src/pages/health-records/HealthRecords.jsx` |
+| Vitals | `frontend/src/pages/health-records/PatientVitals.jsx` |
+| Reports | `frontend/src/pages/health-records/PatientReports.jsx` |
+| Profile | `frontend/src/pages/profile/Profile.jsx` |
+| SOS | `frontend/src/pages/sos/SOSPage.jsx` |
+| Admin dashboard | `frontend/src/pages/admin/AdminDashboard.jsx` |
+| Admin users/doctors/orders/medicines | `frontend/src/pages/admin/AdminUsers.jsx`, `AdminDoctors.jsx`, `AdminOrders.jsx`, `AdminMedicines.jsx` |
 
 ## Testing
 

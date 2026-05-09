@@ -3,6 +3,7 @@ node_modules/
 backend/node_modules/
 frontend/node_modules/
 realtime-server/node_modules/
+android-app/node_modules/
 
 # Env files
 .env
@@ -10,10 +11,12 @@ realtime-server/node_modules/
 backend/.env
 frontend/.env
 realtime-server/.env
+android-app/.env
 !.env.example
 !backend/.env.example
 !frontend/.env.example
 !realtime-server/.env.example
+!android-app/.env.example
 
 # Logs
 *.log
@@ -23,6 +26,9 @@ dist/
 build/
 frontend/dist/
 frontend/build/
+android-app/.expo/
+android-app/dist/
+android-app/build/
 
 # OS files
 .DS_Store

@@ -22,7 +22,7 @@ export function StatusBadge({ online }) {
 }
 
 /* ── Avatar / Initials circle ───────────────────── */
-export function Avatar({ initials, color = "#3ECF8E", size = 38 }) {
+export function Avatar({ initials, color = "#1D72F3", size = 38 }) {
   return (
     <div
       className={styles.avatar}
@@ -135,6 +135,302 @@ export function Spinner({ size = 28 }) {
   );
 }
 
+export function PageHeader({
+  eyebrow,
+  title,
+  subtitle,
+  actions,
+  className = "",
+}) {
+  return (
+    <div className={`${styles.pageHeader} ${className}`}>
+      <div className={styles.pageHeaderCopy}>
+        {eyebrow ? <span>{eyebrow}</span> : null}
+        <h1>{title}</h1>
+        {subtitle ? <p>{subtitle}</p> : null}
+      </div>
+      {actions ? <div className={styles.pageHeaderActions}>{actions}</div> : null}
+    </div>
+  );
+}
+
+export function FilterBar({ children, className = "" }) {
+  return <div className={`${styles.filterBar} ${className}`}>{children}</div>;
+}
+
+export function FilterSelect({ label, value, onChange, children, className = "" }) {
+  return (
+    <label className={`${styles.filterSelect} ${className}`}>
+      {label ? <span>{label}</span> : null}
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        {children}
+      </select>
+    </label>
+  );
+}
+
+export function SearchField({
+  label = "Search",
+  value,
+  onChange,
+  placeholder = "Search...",
+  className = "",
+}) {
+  return (
+    <label className={`${styles.searchField} ${className}`}>
+      <span>{label}</span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        type="search"
+      />
+      {value ? (
+        <button
+          aria-label={`Clear ${label.toLowerCase()}`}
+          onClick={() => onChange("")}
+          type="button"
+        >
+          Clear
+        </button>
+      ) : null}
+    </label>
+  );
+}
+
+export function SegmentedFilter({ options, value, onChange, className = "" }) {
+  return (
+    <div className={`${styles.segmentedFilter} ${className}`}>
+      {options.map((option) => {
+        const id = option.value ?? option;
+        const label = option.label ?? option;
+        const meta = option.meta;
+        const active = value === id;
+        return (
+          <button
+            className={`${styles.segmentedButton} ${active ? styles.segmentedButtonActive : ""}`}
+            key={id}
+            onClick={() => onChange(id)}
+            type="button"
+          >
+            <span>{label}</span>
+            {meta !== undefined ? <strong>{meta}</strong> : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function BinaryFilter({
+  checked,
+  disabled = false,
+  label,
+  offLabel,
+  onChange,
+  className = "",
+}) {
+  return (
+    <button
+      aria-pressed={checked}
+      disabled={disabled}
+      className={`${styles.binaryFilter} ${checked ? styles.binaryFilterActive : ""} ${className}`}
+      onClick={() => onChange(!checked)}
+      type="button"
+    >
+      <span className={`${styles.binaryTrack} ${checked ? styles.binaryTrackActive : ""}`}>
+        <span className={`${styles.binaryKnob} ${checked ? styles.binaryKnobOn : ""}`} />
+      </span>
+      <span>{checked ? label : offLabel || label}</span>
+    </button>
+  );
+}
+
+export function StatusPill({ status = "default", children, className = "" }) {
+  const key = String(status || "default").toLowerCase();
+  return (
+    <span className={`${styles.statusPill} ${styles[`statusPill_${key}`] || styles.statusPill_default} ${className}`}>
+      {children || key.replaceAll("_", " ")}
+    </span>
+  );
+}
+
+export function FormSection({
+  eyebrow,
+  title,
+  subtitle,
+  complete,
+  children,
+  className = "",
+}) {
+  return (
+    <section className={`${styles.formSection} ${className}`}>
+      <div className={styles.formSectionHeader}>
+        <div>
+          {eyebrow ? <span>{eyebrow}</span> : null}
+          <h2>{title}</h2>
+          {subtitle ? <p>{subtitle}</p> : null}
+        </div>
+        {complete !== undefined ? (
+          <StatusPill status={complete ? "success" : "warning"}>
+            {complete ? "Complete" : "Needs details"}
+          </StatusPill>
+        ) : null}
+      </div>
+      <div className={styles.formSectionBody}>{children}</div>
+    </section>
+  );
+}
+
+export function SummaryCard({
+  eyebrow,
+  title,
+  value,
+  subtitle,
+  action,
+  onAction,
+  tone = "default",
+  children,
+  className = "",
+}) {
+  return (
+    <article className={`${styles.summaryCard} ${styles[`summaryCard_${tone}`] || ""} ${className}`}>
+      <div className={styles.summaryCardTop}>
+        <div className="min-w-0">
+          {eyebrow ? <span>{eyebrow}</span> : null}
+          <h3>{title}</h3>
+          {subtitle ? <p>{subtitle}</p> : null}
+        </div>
+        {value ? <strong>{value}</strong> : null}
+      </div>
+      {children ? <div className={styles.summaryCardBody}>{children}</div> : null}
+      {action ? (
+        <Button variant="outline" onClick={onAction}>
+          {action}
+        </Button>
+      ) : null}
+    </article>
+  );
+}
+
+export function DetailDrawer({
+  eyebrow,
+  title,
+  subtitle,
+  children,
+  footer,
+  onClose,
+  className = "",
+}) {
+  return (
+    <ModalPanel
+      className={`max-w-3xl ${className}`}
+      eyebrow={eyebrow}
+      title={title}
+      subtitle={subtitle}
+      footer={footer}
+      onClose={onClose}
+    >
+      {children}
+    </ModalPanel>
+  );
+}
+
+export function DataTable({ columns, rows, empty, getRowKey, className = "" }) {
+  return (
+    <div className={`${styles.dataTableWrap} ${className}`}>
+      <table className={styles.dataTable}>
+        <thead>
+          <tr>
+            {columns.map((column) => (
+              <th key={column.key || column.header}>{column.header}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length}>{empty}</td>
+            </tr>
+          ) : (
+            rows.map((row, index) => (
+              <tr key={getRowKey ? getRowKey(row) : row._id || row.id || index}>
+                {columns.map((column) => (
+                  <td key={column.key || column.header}>
+                    {column.render ? column.render(row) : row[column.key]}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function StepProgress({ steps, activeStep, className = "" }) {
+  return (
+    <div className={`${styles.stepProgress} ${className}`}>
+      {steps.map((step, index) => {
+        const id = step.id ?? index + 1;
+        const active = id === activeStep || index + 1 === activeStep;
+        const done = Number(activeStep) > index + 1;
+        return (
+          <div
+            className={`${styles.stepItem} ${active ? styles.stepActive : ""} ${done ? styles.stepDone : ""}`}
+            key={id}
+          >
+            <span>{done ? "✓" : index + 1}</span>
+            <strong>{step.label || step}</strong>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ModalPanel({
+  eyebrow,
+  title,
+  subtitle,
+  children,
+  footer,
+  onClose,
+  closeLabel = "Close",
+  staticBackdrop = true,
+  className = "",
+}) {
+  const handleBackdropClick = (event) => {
+    if (!staticBackdrop && event.target === event.currentTarget) onClose?.();
+  };
+
+  return (
+    <div className={styles.panelBackdrop} onClick={handleBackdropClick} role="presentation">
+      <section className={`${styles.panelModal} ${className}`} role="dialog" aria-modal="true">
+        <div className={styles.panelHeader}>
+          <div className={styles.panelTitle}>
+            {eyebrow ? <span>{eyebrow}</span> : null}
+            <h2>{title}</h2>
+            {subtitle ? <p>{subtitle}</p> : null}
+          </div>
+          {onClose ? (
+            <button className={styles.panelClose} onClick={onClose} type="button">
+              {closeLabel}
+            </button>
+          ) : null}
+        </div>
+        <div className={styles.panelBody}>{children}</div>
+        {footer ? <div className={styles.panelFooter}>{footer}</div> : null}
+      </section>
+    </div>
+  );
+}
+
+export function MobileActionBar({ children, className = "" }) {
+  return <div className={`${styles.mobileActionBar} ${className}`}>{children}</div>;
+}
+
 export function SkeletonBlock({ className = "" }) {
   return <div aria-hidden="true" className={`med-skeleton-block ${className}`} />;
 }
@@ -225,12 +521,13 @@ export function ErrorMsg({ message, onRetry }) {
   );
 }
 
-export function EmptyState({ icon = "📭", title, subtitle, action, onAction }) {
+export function EmptyState({ icon = "📭", title, subtitle, action, onAction, children }) {
   return (
     <div className={styles.emptyState}>
       <div className={styles.emptyIcon}>{icon}</div>
       <div className={styles.emptyTitle}>{title}</div>
       {subtitle && <div className={styles.emptySub}>{subtitle}</div>}
+      {children}
       {action && (
         <Button variant="primary" onClick={onAction}>
           {action}
@@ -265,3 +562,5 @@ export function Modal({
     </div>
   );
 }
+
+
