@@ -878,7 +878,7 @@ export const uiStyles = createStyles({
   panelFooter:
     "flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] bg-[var(--surface)] p-4",
   mobileActionBar:
-    "fixed inset-x-0 bottom-0 z-[260] hidden border-t border-[var(--border)] bg-[var(--nav-bg)] p-2 shadow-[0_-14px_34px_rgba(0,0,0,0.18)] backdrop-blur max-[700px]:flex max-[700px]:gap-2 max-[700px]:pb-[calc(8px+env(safe-area-inset-bottom,0px))] [&_button]:flex-1",
+    "fixed left-3 right-3 bottom-[calc(78px+env(safe-area-inset-bottom,0px))] z-[210] hidden rounded-med border border-[var(--border)] bg-[var(--nav-bg)] p-2 shadow-[0_-10px_28px_rgba(0,0,0,0.16)] backdrop-blur max-[700px]:flex max-[700px]:gap-2 [&_button]:min-h-[44px] [&_button]:flex-1 [&_button]:whitespace-normal [&_button]:text-center [&_button]:leading-tight",
   formSection:
     "min-w-0 rounded-med border border-[var(--border)] bg-[linear-gradient(180deg,var(--card),var(--surface))] p-4 shadow-[0_14px_34px_var(--admin-shadow)]",
   formSectionHeader:
@@ -1260,6 +1260,8 @@ export const doctorListStyles = createStyles({
   toggleThumbOn: "translate-x-4",
   grid:
     "grid min-w-0 grid-cols-[repeat(auto-fit,minmax(248px,300px))] justify-center gap-3 max-[560px]:grid-cols-1",
+  priceRange:
+    "flex min-h-[44px] min-w-[240px] items-center gap-2 rounded-med border border-[var(--primary-border)] bg-[linear-gradient(180deg,var(--card),var(--surface))] px-3 py-2 text-[12px] font-semibold text-[var(--text)] shadow-[0_8px_20px_rgba(19,34,53,0.06)] max-[640px]:w-full max-[640px]:min-w-0 [&_span]:shrink-0 [&_span:first-child]:text-[var(--muted)] [&_span:last-child]:min-w-[56px] [&_span:last-child]:text-right [&_span:last-child]:text-[var(--primary)] [&_input[type='range']]:h-7 [&_input[type='range']]:min-w-0 [&_input[type='range']]:flex-1 [&_input[type='range']]:cursor-pointer [&_input[type='range']]:appearance-none [&_input[type='range']]:bg-transparent [&_input[type='range']]:accent-[var(--primary)] [&_input[type='range']]:[&::-webkit-slider-runnable-track]:h-2 [&_input[type='range']]:[&::-webkit-slider-runnable-track]:rounded-full [&_input[type='range']]:[&::-webkit-slider-runnable-track]:bg-[linear-gradient(90deg,var(--primary),rgba(29,114,243,0.34))] [&_input[type='range']]:[&::-webkit-slider-thumb]:-mt-1.5 [&_input[type='range']]:[&::-webkit-slider-thumb]:h-5 [&_input[type='range']]:[&::-webkit-slider-thumb]:w-5 [&_input[type='range']]:[&::-webkit-slider-thumb]:appearance-none [&_input[type='range']]:[&::-webkit-slider-thumb]:rounded-full [&_input[type='range']]:[&::-webkit-slider-thumb]:border-2 [&_input[type='range']]:[&::-webkit-slider-thumb]:border-white [&_input[type='range']]:[&::-webkit-slider-thumb]:bg-[var(--primary)] [&_input[type='range']]:[&::-webkit-slider-thumb]:shadow-[0_2px_8px_rgba(29,114,243,0.38)] [&_input[type='range']]:[&::-moz-range-track]:h-2 [&_input[type='range']]:[&::-moz-range-track]:rounded-full [&_input[type='range']]:[&::-moz-range-track]:bg-[linear-gradient(90deg,var(--primary),rgba(29,114,243,0.34))] [&_input[type='range']]:[&::-moz-range-thumb]:h-5 [&_input[type='range']]:[&::-moz-range-thumb]:w-5 [&_input[type='range']]:[&::-moz-range-thumb]:rounded-full [&_input[type='range']]:[&::-moz-range-thumb]:border-2 [&_input[type='range']]:[&::-moz-range-thumb]:border-white [&_input[type='range']]:[&::-moz-range-thumb]:bg-[var(--primary)]",
   card:
     "group relative flex min-h-[226px] w-full max-w-[300px] min-w-0 flex-col gap-3 overflow-hidden rounded-med border border-[var(--border)] bg-[linear-gradient(180deg,var(--card),var(--surface))] p-4 shadow-[0_12px_28px_rgba(19,34,53,0.08)] ring-1 ring-white/50 transition hover:-translate-y-0.5 hover:border-[var(--primary-border)] hover:shadow-[0_18px_38px_rgba(29,114,243,0.13)] max-[560px]:max-w-none before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-[linear-gradient(90deg,var(--primary),rgba(34,184,242,0.55),transparent)]",
   cardTop: "flex min-w-0 items-start justify-between gap-3",
@@ -1645,7 +1647,7 @@ export const healthRecordsStyles = createStyles({
 });
 export const ordersStyles = createStyles({
   ...ordersGeneratedStyles,
-  page: "mx-auto flex w-full min-w-0 max-w-[1180px] flex-col gap-4 pb-4 text-left max-[700px]:pb-24",
+  page: "mx-auto flex w-full min-w-0 max-w-[1180px] flex-col gap-4 pb-4 text-left max-[700px]:pb-[calc(170px+env(safe-area-inset-bottom,0px))]",
   hero: merge(
     topPanel,
     topCopy,

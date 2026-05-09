@@ -10,18 +10,26 @@ const getTimeout = (name, fallback) => {
 const getEmailConfig = () => {
   const port = parseInt(process.env.EMAIL_PORT, 10) || 587;
   return {
-    host: process.env.EMAIL_HOST,
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port,
     secure: parseBool(process.env.EMAIL_SECURE) || port === 465,
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
     from: process.env.EMAIL_FROM || `"Medilink" <${process.env.EMAIL_USER}>`,
     required: parseBool(process.env.EMAIL_REQUIRED),
+    family: 4,
     connectionTimeout: getTimeout('EMAIL_CONNECTION_TIMEOUT_MS', 8000),
     greetingTimeout: getTimeout('EMAIL_GREETING_TIMEOUT_MS', 8000),
     socketTimeout: getTimeout('EMAIL_SOCKET_TIMEOUT_MS', 10000),
   };
 };
+
+const getSafeEmailError = (err) => ({
+  code: err?.code,
+  command: err?.command,
+  responseCode: err?.responseCode,
+  message: err?.message,
+});
 
 const createTransporter = () => {
   const config = getEmailConfig();
@@ -29,6 +37,7 @@ const createTransporter = () => {
     host: config.host,
     port: config.port,
     secure: config.secure,
+    family: config.family,
     auth: {
       user: config.user,
       pass: config.pass,
@@ -73,7 +82,11 @@ const sendEmail = async (options) => {
     console.log(`[email] Message delivered to ${options.to}; id=${info.messageId}`);
     return info;
   } catch (err) {
-    console.error(`[email] Message delivery failed for ${options.to}: ${err.message}`);
+    console.error('[email] Message delivery failed', {
+      to: options.to,
+      subject: options.subject,
+      error: getSafeEmailError(err),
+    });
     throw err;
   }
 };
@@ -81,7 +94,11 @@ const sendEmail = async (options) => {
 const sendEmailInBackground = (options, context = 'email') => {
   setImmediate(() => {
     sendEmail(options).catch((err) => {
-      console.warn(`[${context}] Background email delivery failed for ${options.to}: ${err.message}`);
+      console.warn(`[${context}] Background email delivery failed`, {
+        to: options.to,
+        subject: options.subject,
+        error: getSafeEmailError(err),
+      });
     });
   });
 

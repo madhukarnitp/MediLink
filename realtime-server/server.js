@@ -19,23 +19,59 @@ const app = express();
 let server = null;
 let io = null;
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://medilink-olive.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+const loggedBlockedOrigins = new Set();
+
 const parseCsv = (value) =>
-  value
+  String(value || '')
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
 
-const allowedOrigins = parseCsv(
-  process.env.REALTIME_ALLOWED_ORIGINS ||
-    process.env.ALLOWED_ORIGINS ||
-    'http://localhost:3000,http://localhost:5173',
-);
+const normalizeOrigin = (origin) => String(origin || '').replace(/\/$/, '');
+
+const getAllowedOrigins = () => {
+  const configuredOrigins = parseCsv(
+    process.env.REALTIME_ALLOWED_ORIGINS || process.env.ALLOWED_ORIGINS,
+  );
+  const sourceOrigins = configuredOrigins.length
+    ? configuredOrigins
+    : DEFAULT_ALLOWED_ORIGINS;
+
+  return [...new Set(sourceOrigins.map(normalizeOrigin).filter(Boolean))].filter(
+    (origin) => origin !== '*',
+  );
+};
+
+const allowedOrigins = getAllowedOrigins();
+
+const logBlockedOrigin = (origin) => {
+  const safeOrigin = origin || 'missing-origin';
+  if (loggedBlockedOrigins.has(safeOrigin)) return;
+  loggedBlockedOrigins.add(safeOrigin);
+  console.warn(`[realtime:cors] Blocked origin: ${safeOrigin}`);
+};
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  return allowedOrigins.includes(normalizeOrigin(origin));
+};
+
+const resolveCorsOrigin = (origin, callback) => {
+  if (isOriginAllowed(origin)) {
+    return callback(null, true);
+  }
+
+  logBlockedOrigin(origin);
+  return callback(new Error('Realtime CORS origin is not allowed'), false);
+};
 
 const corsOptions = {
-  origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-    cb(new Error(`Realtime CORS blocked: ${origin}`));
-  },
+  origin: resolveCorsOrigin,
   credentials: true,
 };
 
@@ -67,7 +103,7 @@ const createRealtimeServer = () => {
 
   io = new Server(server, {
     cors: {
-      origin: allowedOrigins,
+      origin: resolveCorsOrigin,
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -160,6 +196,17 @@ app.post('/internal/emit', requireInternalSecret, (req, res) => {
   });
 });
 
+app.use((err, req, res, next) => {
+  if (err?.message === 'Realtime CORS origin is not allowed') {
+    return res.status(403).json({
+      success: false,
+      message: 'Realtime CORS blocked this origin',
+    });
+  }
+
+  return next(err);
+});
+
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -205,4 +252,10 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app, createRealtimeServer };
+module.exports = {
+  app,
+  createRealtimeServer,
+  getAllowedOrigins,
+  isOriginAllowed,
+  resolveCorsOrigin,
+};
